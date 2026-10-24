@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Điểm Danh AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        body { background-color: #f4f7f6; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+        .card { width: 100%; max-width: 420px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="card p-4">
+        <h3 class="text-center mb-4 text-primary fw-bold">Điểm Danh AI</h3>
+        
+        {% if error %}
+        <div class="alert alert-info text-center py-2" role="alert">{{ error }}</div>
+        {% endif %}
+        <div id="jsErrorAlert" class="alert alert-danger text-center py-2 d-none" role="alert"></div>
+
+        <ul class="nav nav-pills nav-justified mb-3" id="pills-tab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold" id="pills-login-tab" data-bs-toggle="pill" data-bs-target="#pills-login" type="button">Đăng Nhập</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold" id="pills-register-tab" data-bs-toggle="pill" data-bs-target="#pills-register" type="button">Đăng Ký (SV)</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="pills-tabContent">
+            <!-- Form Đăng Nhập -->
+            <div class="tab-pane fade show active" id="pills-login" role="tabpanel">
+                <form action="/login" method="post">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tài khoản (MSSV / Mã GV)</label>
+                        <input type="text" name="username" class="form-control" placeholder="Nhập tài khoản" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mật khẩu</label>
+                        <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Đăng Nhập</button>
+                </form>
+            </div>
+
+            <!-- Form Đăng Ký Sinh Viên -->
+            <div class="tab-pane fade" id="pills-register" role="tabpanel">
+                <form id="registerForm" action="/register_user" method="post">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Vai trò</label>
+                        <select name="role" class="form-select" id="reg_role" onchange="toggleRoleFormat()">
+                            <option value="student" selected>Sinh viên</option>
+                            <option value="teacher">Giảng viên</option>
+                        </select>
+                    </div>
+                    <div class="mb-3 d-none" id="inviteBox">
+                        <label class="form-label fw-bold">Mã mời giảng viên</label>
+                        <input type="password" name="invite_code" id="invite_code" class="form-control"
+                               autocomplete="off" placeholder="Do quản trị viên cung cấp">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Họ và Tên</label>
+                        <input type="text" name="fullname" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold" id="lbl_username">Mã số Sinh viên (Chỉ nhập số)</label>
+                        <input type="text" name="username" id="reg_username" class="form-control" 
+                               inputmode="numeric" pattern="[0-9]+" maxlength="15" 
+                               placeholder="Chỉ nhập số (VD: 2001210123)" required 
+                               oninput="if(document.getElementById('reg_role').value==='student') this.value = this.value.replace(/[^0-9]/g, '')">
+                        <small class="text-muted">Dùng làm tài khoản đăng nhập.</small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mật khẩu</label>
+                        <input type="password" name="password" id="reg_password" class="form-control" placeholder="Nhập mật khẩu" required minlength="8" maxlength="72">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Xác nhận Mật khẩu</label>
+                        <input type="password" name="confirm_password" id="reg_confirm_password" class="form-control" placeholder="Nhập lại mật khẩu" required minlength="8" maxlength="72">
+                    </div>
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Đăng Ký Tài Khoản</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            const pwd = document.getElementById('reg_password').value;
+            const confirmPwd = document.getElementById('reg_confirm_password').value;
+            const jsAlert = document.getElementById('jsErrorAlert');
+
+            if (pwd !== confirmPwd) {
+                e.preventDefault();
+                jsAlert.innerText = "Mật khẩu xác nhận không khớp! Vui lòng kiểm tra lại.";
+                jsAlert.classList.remove('d-none');
+                return false;
+            }
+            jsAlert.classList.add('d-none');
+        });
+
+	function toggleRoleFormat() {
+            const role = document.getElementById('reg_role').value;
+            const userInput = document.getElementById('reg_username');
+            const userLabel = document.getElementById('lbl_username');
+            document.getElementById('inviteBox').classList.toggle('d-none', role !== 'teacher');
+
+            if (role === 'student') {
+                userLabel.innerText = "Mã số Sinh viên (Chỉ nhập số)";
+                userInput.placeholder = "Chỉ nhập số (VD: 2001210123)";
+                userInput.setAttribute("inputmode", "numeric");
+                userInput.setAttribute("pattern", "[0-9]+");
+                userInput.value = userInput.value.replace(/[^0-9]/g, '');
+            } else {
+                userLabel.innerText = "Tên tài khoản (Giảng viên)";
+                userInput.placeholder = "Ví dụ: giaovien1";
+                userInput.removeAttribute("inputmode");
+                userInput.removeAttribute("pattern");
+            }
+        }
+    </script>
+</body>
+</html>

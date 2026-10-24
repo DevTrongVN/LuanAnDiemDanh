@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký khuôn mặt eKYC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style> 
+        body { background-color: #f0f2f5; } 
+        .camera-wrapper { width: 260px; height: 260px; margin: 0 auto; border-radius: 50%; border: 6px solid #e9ecef; overflow: hidden; position: relative; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .camera-wrapper.active { border-color: #0d6efd; box-shadow: 0 0 20px rgba(13, 110, 253, 0.5); }
+        #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); } 
+        
+        .gallery-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 15px;}
+        .gallery-item { width: 75px; height: 75px; object-fit: cover; border-radius: 8px; border: 2px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #instructionText { font-size: 1.2rem; font-weight: bold; transition: all 0.3s ease; }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-primary text-white mb-4">
+        <div class="container d-flex justify-content-between align-items-center">
+            <span class="navbar-brand mb-0 h1">Hệ Thống eKYC Sinh Viên</span>
+            <form action="/logout" method="post" class="m-0">
+                <button type="submit" class="btn btn-sm btn-outline-light">Đăng Xuất</button>
+            </form>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 500px;">
+        <div class="card p-4 shadow-sm mb-5 border-0">
+            <p class="text-center mb-3">Xin chào, <b class="text-primary">{{ name }}</b> ({{ mssv }})</p>
+
+            {% if is_registered %}
+                <div class="alert alert-success text-center">
+                    <h5 class="mb-1">✅ Đã định danh thành công</h5>
+                </div>
+
+                {% if registered_images %}
+            <div class="mb-4">
+                <h6 class="text-center text-muted">🖼️ Hồ sơ nhận diện (6 góc mặt):</h6>
+                <div class="gallery-container">
+                    {% for img_url in registered_images %}
+                        <img src="{{ img_url }}" class="gallery-item" alt="Face Angle">
+                    {% endfor %}
+                </div>
+                
+                <!-- BẮT ĐẦU: Khung luật quét Realtime -->
+                <div class="alert alert-warning mt-4 text-start shadow-sm border-0 mx-auto" style="font-size: 0.9rem; max-width: 450px;">
+                    <h6 class="fw-bold text-danger mb-2">⚠️ Luật Khi Quét Realtime Điểm Danh Sinh Viên:</h6>
+                    <ul class="mb-0 text-dark ps-3">
+                        <li class="mb-1">Sinh viên phải bỏ khẩu trang, kính mắt ra và nghiêm túc di chuyển.</li>
+                        <li class="mb-1">Đưa mặt mình vào camera sao cho rõ, không bị mờ nét và đứng yên chờ xác nhận.</li>
+                        <li class="mb-1">Khi đã hiện tên của mình màu xanh lá thì bắt đầu di chuyển qua cho bạn khác vào.</li>
+                        <li>Nếu không hiện tên và hiện chữ "unknown" thì hãy đi ra và làm lại. Nếu hiện tên bạn khác thì báo cáo ngay với thầy cô.</li>
+                    </ul>
+                </div>
+                <!-- KẾT THÚC: Khung luật quét Realtime -->
+                
+            </div>
+            {% endif %}
+
+                <div class="text-center mb-4 border-top pt-3">
+                    <button class="btn btn-outline-primary" onclick="toggleCameraForm()">
+                        🔄 Cập nhật lại khuôn mặt
+                    </button>
+                </div>
+            {% endif %}
+
+            <div id="alertBox" class="alert d-none text-center"></div>
+
+            <div id="kyc-form-area" class="{% if is_registered %}d-none{% endif %}">
+                <!-- BẢNG HƯỚNG DẪN CHỤP -->
+                <div class="alert alert-info py-2 mb-4 text-start rounded-3 shadow-sm border-0" style="font-size: 0.9rem;">
+                    <h6 class="fw-bold mb-2 text-center text-primary">📌 HƯỚNG DẪN ĐỊNH DANH 6 GÓC</h6>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <ul class="mb-0 ps-3 text-dark">
+                                <li>① Nhìn thẳng</li>
+                                <li>② Mỉm cười</li>
+                                <li>③ Quay Trái</li>
+                            </ul>
+                        </div>
+                        <div class="col-6">
+                            <ul class="mb-0 ps-3 text-dark">
+                                <li>④ Quay Phải</li>
+                                <li>⑤ Ngước Lên</li>
+                                <li>⑥ Cúi Xuống</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <hr class="my-2 border-primary opacity-25">
+                    <div class="d-flex justify-content-between px-2 fw-bold" style="font-size: 0.85rem;">
+                        <span id="checkLight" class="text-success">✓ Đủ sáng</span>
+                        <span id="checkFace" class="text-success">✓ Rõ mặt</span>
+                        <span id="checkSingle" class="text-success">✓ 1 Người</span>
+                    </div>
+                </div>
+                <!-- KẾT THÚC BẢNG HƯỚNG DẪN -->
+
+                <div class="camera-wrapper mb-3" id="camWrapper">
+                    <video id="webcam" autoplay playsinline muted></video>
+                </div>
+                
+                <div class="text-center mb-4">
+                    <div id="instructionText" class="text-primary mb-2">Hãy để khuôn mặt vào giữa vòng tròn</div>
+                    <div class="progress" style="height: 8px;">
+                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <form id="ekycForm">
+                    <input type="hidden" name="mssv" value="{{ mssv }}">
+                    <input type="hidden" name="name" value="{{ name }}">
+                    
+                    <button type="button" id="startBtn" class="btn btn-primary w-100 py-3 fw-bold rounded-pill">
+                        📸 Bắt Đầu Quét Khuôn Mặt
+                    </button>
+                    
+                    <button type="button" id="uploadingBtn" class="btn btn-secondary w-100 py-3 fw-bold rounded-pill d-none" disabled>
+                        <span class="spinner-border spinner-border-sm" role="status"></span> AI Đang Đồng Bộ Dữ Liệu...
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Canvas ẩn để lấy ảnh từ Video -->
+    <canvas id="canvas" class="d-none"></canvas>
+
+    <script>
+        const videoElement = document.getElementById('webcam');
+        const startBtn = document.getElementById('startBtn');
+        const uploadingBtn = document.getElementById('uploadingBtn');
+        const instructionText = document.getElementById('instructionText');
+        const progressBar = document.getElementById('progressBar');
+        const camWrapper = document.getElementById('camWrapper');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const alertBox = document.getElementById('alertBox');
+        const kycFormArea = document.getElementById('kyc-form-area');
+
+        let videoStream = null;
+        let capturedBlobs = [];
+
+        const steps = [
+            "1/6: Nhìn thẳng trực diện",
+            "2/6: Mỉm cười thật tươi",
+            "3/6: Từ từ quay sang TRÁI (khoảng 30 độ)",
+            "4/6: Từ từ quay sang PHẢI (khoảng 30 độ)",
+            "5/6: Hơi ngước cằm LÊN",
+            "6/6: Hơi cúi cằm XUỐNG"
+        ];
+
+        function startCamera() {
+            if (videoStream) return; 
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
+                .then(stream => { 
+                    videoElement.srcObject = stream; 
+                    videoStream = stream; 
+                })
+                .catch(err => { 
+                    showAlert("Hãy cho phép dùng Camera để định danh!", "danger"); 
+                    startBtn.disabled = true; 
+                });
+        }
+
+        function stopCamera() {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => track.stop());
+                videoElement.srcObject = null;
+                videoStream = null;
+            }
+        }
+
+        function toggleCameraForm() {
+            kycFormArea.classList.toggle('d-none');
+            if (!kycFormArea.classList.contains('d-none')) {
+                startCamera(); 
+            } else {
+                stopCamera(); 
+            }
+        }
+
+        if (!kycFormArea.classList.contains('d-none')) {
+            startCamera();
+        }
+
+        startBtn.addEventListener('click', async () => {
+            startBtn.classList.add('d-none');
+            camWrapper.classList.add('active');
+            capturedBlobs = [];
+            
+            canvas.width = videoElement.videoWidth || 480;
+            canvas.height = videoElement.videoHeight || 640;
+
+            for (let i = 0; i < steps.length; i++) {
+                instructionText.innerText = steps[i];
+                instructionText.className = "text-danger mb-2"; 
+                
+                progressBar.style.transition = 'none';
+                progressBar.style.width = '0%';
+                await new Promise(r => setTimeout(r, 50)); 
+                
+                progressBar.style.transition = 'width 2.5s linear';
+                progressBar.style.width = '100%';
+                
+                await new Promise(r => setTimeout(r, 2500));
+                
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                ctx.setTransform(1, 0, 0, 1, 0, 0); 
+
+                let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
+                capturedBlobs.push(blob);
+                
+                camWrapper.style.borderColor = "#198754";
+                instructionText.className = "text-success mb-2";
+                await new Promise(r => setTimeout(r, 300));
+                camWrapper.style.borderColor = "#0d6efd";
+            }
+
+            instructionText.innerText = "Hoàn tất! Đang xử lý...";
+            camWrapper.classList.remove('active');
+            uploadingBtn.classList.remove('d-none');
+            
+            stopCamera();
+            sendToBackend();
+        });
+
+        async function sendToBackend() {
+            let formData = new FormData(document.getElementById('ekycForm'));
+            
+            // Đẩy ảnh RAW chưa mã hóa để tối ưu hóa CPU
+            for (let index = 0; index < capturedBlobs.length; index++) {
+                formData.append('files', capturedBlobs[index], `face_angle_${index}.jpg`);
+            }
+
+            try {
+                let response = await fetch('/api/dang_ky_khuon_mat', { 
+                    method: 'POST', 
+                    body: formData 
+                });
+                
+                let result = await response.json(); // Đọc dữ liệu JSON từ Server
+                
+                if(result.success) { 
+                    window.location.reload(); 
+                } else { 
+                    // In câu lỗi chung ra Alert
+                    let msg = result.message;
+                    showAlert(msg, "danger"); 
+                    
+                    // Reset checklist về mặc định (Xanh lá)
+                    document.getElementById('checkLight').innerHTML = "✓ Đủ sáng";
+                    document.getElementById('checkLight').className = "text-success";
+                    document.getElementById('checkFace').innerHTML = "✓ Rõ mặt";
+                    document.getElementById('checkFace').className = "text-success";
+                    document.getElementById('checkSingle').innerHTML = "✓ 1 Người";
+                    document.getElementById('checkSingle').className = "text-success";
+
+                    // Phân tích câu chữ của AI để đánh dấu Đỏ (Làm động UI)
+                    if (msg.includes("tối") || msg.includes("chói") || msg.includes("sáng")) {
+                        document.getElementById('checkLight').innerHTML = "❌ Lỗi ánh sáng";
+                        document.getElementById('checkLight').className = "text-danger";
+                    }
+                    if (msg.includes("nhỏ") || msg.includes("xa") || msg.includes("Không tìm thấy") || msg.includes("sâu")) {
+                        document.getElementById('checkFace').innerHTML = "❌ Không rõ mặt";
+                        document.getElementById('checkFace').className = "text-danger";
+                    }
+                    if (msg.includes("nhiều hơn 1")) {
+                        document.getElementById('checkSingle').innerHTML = "❌ Nhiều người";
+                        document.getElementById('checkSingle').className = "text-danger";
+                    }
+
+                    resetUI(); 
+                }
+            } catch (err) { 
+                showAlert("Lỗi kết nối mạng hoặc Server không phản hồi.", "danger"); 
+                resetUI(); 
+            }
+        }
+
+        function resetUI() {
+            uploadingBtn.classList.add('d-none');
+            startBtn.classList.remove('d-none');
+            instructionText.innerText = "Hãy để khuôn mặt vào giữa vòng tròn";
+            progressBar.style.width = '0%';
+            startCamera(); 
+        }
+
+        function showAlert(msg, type) { 
+            alertBox.innerText = msg; 
+            alertBox.className = `alert alert-${type} text-center mb-3`; 
+            alertBox.classList.remove('d-none'); 
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Điểm Danh AI</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto; }
+        .form-group { margin-bottom: 20px; }
+        select, input, button { width: 100%; padding: 10px; margin-top: 5px; font-size: 16px; }
+        button { background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h2>ĐIỂM DANH LỚP HỌC</h2>
+    <form action="/api/diem_danh" method="post" enctype="multipart/form-data">
+        
+        <!-- Dropdown chọn lớp để hệ thống khoanh vùng CSDL -->
+        <div class="form-group">
+            <label>Chọn Lớp Học:</label>
+            <select name="class_code" required>
+                <option value="15DHKHDL03">Lớp Khai thác Dữ liệu 03</option>
+                <option value="15DHKHDL05">Lớp Khai thác Dữ liệu 05</option>
+            </select>
+        </div>
+
+        <!-- Thuộc tính capture giúp mở thẳng Camera trên di động -->
+        <div class="form-group">
+            <label>Chụp ảnh hoặc Quay video toàn cảnh:</label>
+            <input type="file" name="file" accept="video/*,image/*" capture="environment" required>
+        </div>
+
+        <button type="submit">Bắt Đầu Điểm Danh AI</button>
+    </form>
+</body>
+</html>

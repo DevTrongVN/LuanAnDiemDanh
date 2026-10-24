@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+jinja2
+bcrypt
+torch
+torchvision
+facenet-pytorch
+opencv-python
+mediapipe
+pandas
+openpyxl
+xlrd

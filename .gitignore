@@ -1,0 +1,37 @@
+# Dữ liệu cục bộ & Face Bank
+database/
+*.csv
+*.db
+*.xlsx
+*.xls
+
+# Thư mục tải lên chứa ảnh/video thực tế
+uploads/
+
+# File cấu hình & log hệ thống
+.env
+system_events.log
+database/.session_secret
+
+# Trọng số AI (quá nặng để đưa lên Git)
+*.pt
+*.tflite
+
+# Môi trường Python & Cache
+__pycache__/
+*.pyc
+venv/
+demo_env/
+
+# Các file benchmark, test cục bộ và rác thừa
+benchmark*
+run_benchmark*.py
+localtest.py
+catcode.py
+model_size.py
+*.docx
+*.rar
+*.png
+project_all_code*.txt
+New Text Document.txt
+HUONG_DAN_CAI_DAT.md
