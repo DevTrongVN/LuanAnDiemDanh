@@ -2,119 +2,804 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Điểm Danh AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Hệ Thống Điểm Danh AI - Đăng Nhập & Đăng Ký</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <style>
-        body { background-color: #f4f7f6; display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-        .card { width: 100%; max-width: 420px; border-radius: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            --secondary-bg: #f8fafc;
+            --card-border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #eff6ff 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+            margin: 0;
+            position: relative;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        /* Nền trang trí hình học */
+        body::before {
+            content: "";
+            position: absolute;
+            width: 520px;
+            height: 520px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.09) 0%, rgba(37, 99, 235, 0) 70%);
+            top: -120px;
+            right: -120px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: "";
+            position: absolute;
+            width: 480px;
+            height: 480px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.08) 0%, rgba(14, 165, 233, 0) 70%);
+            bottom: -120px;
+            left: -120px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ==============================================================
+           SAAS SPLIT CARD (Desktop 2 Cột / Mobile 1 Cột)
+           ============================================================== */
+        .auth-card {
+            width: 100%;
+            max-width: 460px;
+            background: #ffffff;
+            border-radius: 24px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.07), 0 0 1px 1px rgba(0, 0, 0, 0.03);
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Desktop (>= 992px): Chuyển thành bố cục SaaS Split Card 2 Cột */
+        @media (min-width: 992px) {
+            .auth-card {
+                max-width: 980px;
+                display: grid;
+                grid-template-columns: 420px 1fr;
+                min-height: 620px;
+                box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.12), 0 0 1px 1px rgba(0, 0, 0, 0.03);
+            }
+        }
+
+        /* CỘT TRÁI: HERO SHOWCASE (Chỉ hiển thị trên Desktop >= 992px) */
+        .auth-hero-pane {
+            background: linear-gradient(145deg, #1e3a8a 0%, #1d4ed8 45%, #2563eb 100%);
+            color: #ffffff;
+            padding: 40px 36px;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-hero-pane::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+            pointer-events: none;
+        }
+
+        .auth-hero-pane::after {
+            content: "";
+            position: absolute;
+            bottom: -60px;
+            left: -60px;
+            width: 260px;
+            height: 260px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.15) 0%, rgba(96, 165, 250, 0) 70%);
+            pointer-events: none;
+        }
+
+        .hero-brand-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            width: fit-content;
+        }
+
+        .hero-logo-box {
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(8px);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .hero-title {
+            font-size: 1.85rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin: 0 0 10px 0;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: 0.925rem;
+            line-height: 1.55;
+            opacity: 0.88;
+            margin: 0 0 28px 0;
+        }
+
+        .hero-features-list {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .hero-feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+        }
+
+        .feature-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .feature-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .feature-desc {
+            font-size: 0.775rem;
+            opacity: 0.8;
+            line-height: 1.4;
+        }
+
+        .hero-footer-trust {
+            font-size: 0.775rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.9;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* CỘT PHẢI: FORM ACTION PANEL */
+        .auth-form-pane {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            background: #ffffff;
+        }
+
+        .auth-header {
+            text-align: center;
+            padding: 32px 32px 18px 32px;
+        }
+
+        /* Trên Desktop khi đã có Hero pane, ẩn bớt logo to để giao diện gọn gàng */
+        @media (min-width: 992px) {
+            .auth-header {
+                padding: 36px 36px 18px 36px;
+                text-align: left;
+            }
+            .auth-header .brand-icon-wrapper {
+                display: none;
+            }
+            .auth-body {
+                padding: 0 36px 36px 36px;
+            }
+        }
+
+        .brand-icon-wrapper {
+            width: 58px;
+            height: 58px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 26px;
+            margin-bottom: 14px;
+            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.35);
+        }
+
+        .brand-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+        }
+
+        .brand-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .auth-body {
+            padding: 0 32px 36px 32px;
+        }
+
+        /* Segmented Nav Tabs */
+        .segmented-tabs {
+            background-color: #f1f5f9;
+            padding: 5px;
+            border-radius: 12px;
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .segmented-tabs .nav-item {
+            flex: 1;
+        }
+
+        .segmented-tabs .nav-link {
+            width: 100%;
+            border-radius: 9px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            padding: 10px 12px;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 42px;
+        }
+
+        .segmented-tabs .nav-link:hover {
+            color: var(--text-main);
+        }
+
+        .segmented-tabs .nav-link.active {
+            background-color: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Form Controls */
+        .form-label {
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-group-custom {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            color: #94a3b8;
+            font-size: 1.1rem;
+            pointer-events: none;
+            transition: color 0.2s ease;
+            z-index: 3;
+        }
+
+        .form-control-custom,
+        .form-select-custom {
+            width: 100%;
+            padding: 11px 14px 11px 42px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            color: var(--text-main);
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+            min-height: 44px;
+        }
+
+        .form-select-custom {
+            padding-left: 42px;
+            cursor: pointer;
+        }
+
+        .form-control-custom:focus,
+        .form-select-custom:focus {
+            background-color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+            outline: none;
+        }
+
+        .input-group-custom:focus-within .input-icon {
+            color: var(--primary);
+        }
+
+        .form-hint {
+            font-size: 0.775rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* Submit Buttons */
+        .btn-auth-primary {
+            width: 100%;
+            padding: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 8px 16px -4px rgba(37, 99, 235, 0.35);
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 48px;
+            touch-action: manipulation;
+        }
+
+        .btn-auth-primary:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 12px 20px -4px rgba(37, 99, 235, 0.45);
+        }
+
+        .btn-auth-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-auth-success {
+            width: 100%;
+            padding: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 8px 16px -4px rgba(5, 150, 105, 0.35);
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 48px;
+            touch-action: manipulation;
+        }
+
+        .btn-auth-success:hover {
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 12px 20px -4px rgba(5, 150, 105, 0.45);
+        }
+
+        /* Modern Alerts */
+        .alert-custom {
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            border: none;
+        }
+
+        .alert-custom-info {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .alert-custom-danger {
+            background-color: #fef2f2;
+            color: #b91c1c;
+            border-left: 4px solid #ef4444;
+        }
+
+        .alert-icon {
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            font-size: 0.775rem;
+            color: var(--text-muted);
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .security-badge i {
+            color: #10b981;
+        }
+
+        /* ==============================================================
+           RESPONSIVE RULES: MOBILE VÀ CÁC BREAKPOINTS
+           ============================================================== */
+        /* Tablet & Mobile (< 768px): Input font 16px chống iOS auto-zoom */
+        @media (max-width: 768px) {
+            .form-control-custom,
+            .form-select-custom {
+                font-size: 16px; /* Ngăn Safari tự phóng to màn hình khi focus input */
+                min-height: 48px;
+            }
+            .btn-auth-primary,
+            .btn-auth-success {
+                min-height: 48px;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .auth-card {
+                border-radius: 20px;
+                box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05);
+            }
+            .auth-header {
+                padding: 26px 20px 16px 20px;
+            }
+            .auth-body {
+                padding: 0 20px 28px 20px;
+            }
+            .brand-title {
+                font-size: 1.35rem;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .auth-header {
+                padding: 22px 16px 14px 16px;
+            }
+            .auth-body {
+                padding: 0 16px 24px 16px;
+            }
+            .brand-icon-wrapper {
+                width: 50px;
+                height: 50px;
+                font-size: 22px;
+                border-radius: 14px;
+                margin-bottom: 10px;
+            }
+            .brand-title {
+                font-size: 1.25rem;
+            }
+            .brand-subtitle {
+                font-size: 0.8rem;
+            }
+            .segmented-tabs .nav-link {
+                padding: 8px 8px;
+                font-size: 0.825rem;
+            }
+        }
+
+        @media (max-width: 340px) {
+            .segmented-tabs .nav-link {
+                padding: 8px 4px;
+                font-size: 0.775rem;
+                gap: 4px;
+            }
+            .brand-title {
+                font-size: 1.15rem;
+            }
+        }
+
     </style>
 </head>
 <body>
-    <div class="card p-4">
-        <h3 class="text-center mb-4 text-primary fw-bold">Điểm Danh AI</h3>
-        
-        {% if error %}
-        <div class="alert alert-info text-center py-2" role="alert">{{ error }}</div>
-        {% endif %}
-        <div id="jsErrorAlert" class="alert alert-danger text-center py-2 d-none" role="alert"></div>
-
-        <ul class="nav nav-pills nav-justified mb-3" id="pills-tab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active fw-bold" id="pills-login-tab" data-bs-toggle="pill" data-bs-target="#pills-login" type="button">Đăng Nhập</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold" id="pills-register-tab" data-bs-toggle="pill" data-bs-target="#pills-register" type="button">Đăng Ký (SV)</button>
-            </li>
-        </ul>
-
-        <div class="tab-content" id="pills-tabContent">
-            <!-- Form Đăng Nhập -->
-            <div class="tab-pane fade show active" id="pills-login" role="tabpanel">
-                <form action="/login" method="post">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Tài khoản (MSSV / Mã GV)</label>
-                        <input type="text" name="username" class="form-control" placeholder="Nhập tài khoản" required>
+    <div class="auth-card">
+        <!-- HERO SHOWCASE COLUMN (Desktop >= 992px) -->
+        <div class="auth-hero-pane d-none d-lg-flex">
+            
+            
+            <div class="hero-content">
+                <div class="hero-logo-box">
+                    <i class="bi bi-person-bounding-box"></i>
+                </div>
+                <h2 class="hero-title">ĐIỂM DANH AI</h2>
+                <p class="hero-subtitle">Giải pháp điểm danh thông minh & quản trị lớp học tự động bằng nhận diện khuôn mặt thời gian thực</p>
+                
+                <div class="hero-features-list">
+                    <div class="hero-feature-item">
+                        <div class="feature-icon"><i class="bi bi-lightning-charge-fill"></i></div>
+                        <div>
+                            <div class="feature-title">Nhận Diện Realtime Siêu Tốc</div>
+                            <div class="feature-desc">Tự động bắt khuôn mặt qua camera và xác thực tức thì trong tích tắc</div>
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Mật khẩu</label>
-                        <input type="password" name="password" class="form-control" placeholder="Nhập mật khẩu" required>
+                    
+                    <div class="hero-feature-item">
+                        <div class="feature-icon"><i class="bi bi-shield-fill-check"></i></div>
+                        <div>
+                            <div class="feature-title">Bảo Mật eKYC Chống Giả Mạo</div>
+                            <div class="feature-desc">Thuật toán đối chiếu 6 góc ảnh thực tế</div>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Đăng Nhập</button>
-                </form>
+                    
+                    <div class="hero-feature-item">
+                        <div class="feature-icon"><i class="bi bi-file-earmark-excel-fill"></i></div>
+                        <div>
+                            <div class="feature-title">Báo Cáo Tự Động 100%</div>
+                            <div class="feature-desc">Tính toán tỉ lệ có mặt/vắng mặt và xuất file Excel chỉ với 1 click</div>
+                        </div>
+                    </div>
+                </div>
             </div>
-
-            <!-- Form Đăng Ký Sinh Viên -->
-            <div class="tab-pane fade" id="pills-register" role="tabpanel">
-                <form id="registerForm" action="/register_user" method="post">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Vai trò</label>
-                        <select name="role" class="form-select" id="reg_role" onchange="toggleRoleFormat()">
-                            <option value="student" selected>Sinh viên</option>
-                            <option value="teacher">Giảng viên</option>
-                        </select>
-                    </div>
-                    <div class="mb-3 d-none" id="inviteBox">
-                        <label class="form-label fw-bold">Mã mời giảng viên</label>
-                        <input type="password" name="invite_code" id="invite_code" class="form-control"
-                               autocomplete="off" placeholder="Do quản trị viên cung cấp">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Họ và Tên</label>
-                        <input type="text" name="fullname" class="form-control" placeholder="Ví dụ: Nguyễn Văn A" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold" id="lbl_username">Mã số Sinh viên (Chỉ nhập số)</label>
-                        <input type="text" name="username" id="reg_username" class="form-control" 
-                               inputmode="numeric" pattern="[0-9]+" maxlength="15" 
-                               placeholder="Chỉ nhập số (VD: 2001210123)" required 
-                               oninput="if(document.getElementById('reg_role').value==='student') this.value = this.value.replace(/[^0-9]/g, '')">
-                        <small class="text-muted">Dùng làm tài khoản đăng nhập.</small>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Mật khẩu</label>
-                        <input type="password" name="password" id="reg_password" class="form-control" placeholder="Nhập mật khẩu" required minlength="8" maxlength="72">
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Xác nhận Mật khẩu</label>
-                        <input type="password" name="confirm_password" id="reg_confirm_password" class="form-control" placeholder="Nhập lại mật khẩu" required minlength="8" maxlength="72">
-                    </div>
-                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Đăng Ký Tài Khoản</button>
-                </form>
+            
+            <div class="hero-footer-trust">
+                <i class="bi bi-patch-check-fill text-success"></i>
+                <span>Hệ thống đạt chuẩn an toàn thông tin & bảo mật dữ liệu</span>
             </div>
         </div>
-    </div>
+
+        <!-- FORM ACTION COLUMN -->
+        <div class="auth-form-pane">
+        <div class="auth-header">
+            <div class="brand-icon-wrapper">
+                <i class="bi bi-person-bounding-box"></i>
+            </div>
+            <h1 class="brand-title">Điểm Danh AI</h1>
+            <p class="brand-subtitle">Hệ thống điểm danh thông minh qua nhận diện khuôn mặt</p>
+        </div>
+
+        <div class="auth-body">
+            {% if error %}
+            <div class="alert-custom alert-custom-info" role="alert">
+                <i class="bi bi-info-circle-fill alert-icon"></i>
+                <div>{{ error }}</div>
+            </div>
+            {% endif %}
+            
+            <div id="jsErrorAlert" class="alert-custom alert-custom-danger d-none" role="alert">
+                <i class="bi bi-exclamation-triangle-fill alert-icon"></i>
+                <div id="jsErrorAlertText"></div>
+            </div>
+
+            <!-- Segmented Control Tabs -->
+            <ul class="nav segmented-tabs" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pills-login-tab" data-bs-toggle="pill" data-bs-target="#pills-login" type="button" role="tab" aria-controls="pills-login" aria-selected="true">
+                        <i class="bi bi-box-arrow-in-right"></i> Đăng Nhập
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-register-tab" data-bs-toggle="pill" data-bs-target="#pills-register" type="button" role="tab" aria-controls="pills-register" aria-selected="false">
+                        <i class="bi bi-person-plus"></i> Đăng Ký (SV)
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="pills-tabContent">
+                <!-- FORM ĐĂNG NHẬP -->
+                <div class="tab-pane fade show active" id="pills-login" role="tabpanel" aria-labelledby="pills-login-tab">
+                    <form action="/login" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-person"></i> Tài khoản (MSSV / Mã GV)
+                            </label>
+                            <div class="input-group-custom">
+                                <i class="bi bi-person input-icon"></i>
+                                <input type="text" name="username" class="form-control-custom" placeholder="Nhập mã số SV hoặc tài khoản GV" required autofocus autocomplete="username">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-lock"></i> Mật khẩu
+                            </label>
+                            <div class="input-group-custom">
+                                <i class="bi bi-lock input-icon"></i>
+                                <input type="password" name="password" class="form-control-custom" placeholder="Nhập mật khẩu của bạn" required autocomplete="current-password">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-auth-primary">
+                            <span>Đăng Nhập</span>
+                            <i class="bi bi-arrow-right"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- FORM ĐĂNG KÝ -->
+                <div class="tab-pane fade" id="pills-register" role="tabpanel" aria-labelledby="pills-register-tab">
+                    <form id="registerForm" action="/register_user" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-shield-lock"></i> Vai trò đăng ký
+                            </label>
+                            <div class="input-group-custom">
+                                <i class="bi bi-person-badge input-icon"></i>
+                                <select name="role" class="form-select-custom" id="reg_role" onchange="toggleRoleFormat()">
+                                    <option value="student" selected>Sinh viên</option>
+                                    <option value="teacher">Giảng viên</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Khung nhập mã mời giảng viên -->
+                        <div class="mb-3 d-none" id="inviteBox">
+                            <label class="form-label text-primary">
+                                <i class="bi bi-key-fill"></i> Mã mời giảng viên
+                            </label>
+                            <div class="input-group-custom">
+                                <i class="bi bi-key input-icon text-primary"></i>
+                                <input type="password" name="invite_code" id="invite_code" class="form-control-custom border-primary"
+                                       autocomplete="off" placeholder="Nhập mã do quản trị viên cung cấp">
+                            </div>
+                            <span class="form-hint">Mã bảo mật bắt buộc đối với tài khoản Giảng viên.</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-card-heading"></i> Họ và Tên
+                            </label>
+                            <div class="input-group-custom">
+                                <i class="bi bi-card-heading input-icon"></i>
+                                <input type="text" name="fullname" class="form-control-custom" placeholder="Ví dụ: Nguyễn Văn A" required autocomplete="name">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label" id="lbl_username">
+                                <i class="bi bi-hash"></i> Mã số Sinh viên (Chỉ nhập số)
+                            </label>
+                            <div class="input-group-custom">
+                                <i class="bi bi-upc-scan input-icon"></i>
+                                <input type="text" name="username" id="reg_username" class="form-control-custom" 
+                                       inputmode="numeric" pattern="[0-9]+" maxlength="15" 
+                                       placeholder="Chỉ nhập số (VD: 2001210123)" required 
+                                       autocomplete="username"
+                                       oninput="if(document.getElementById('reg_role').value==='student') this.value = this.value.replace(/[^0-9]/g, '')">
+                            </div>
+                            <span class="form-hint">Dùng làm tài khoản đăng nhập vào hệ thống.</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-lock"></i> Mật khẩu
+                            </label>
+                            <div class="input-group-custom">
+                                <i class="bi bi-lock input-icon"></i>
+                                <input type="password" name="password" id="reg_password" class="form-control-custom" placeholder="Tối thiểu 8 ký tự" required minlength="8" maxlength="72" autocomplete="new-password">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="bi bi-shield-check"></i> Xác nhận Mật khẩu
+                            </label>
+                            <div class="input-group-custom">
+                                <i class="bi bi-shield-check input-icon"></i>
+                                <input type="password" name="confirm_password" id="reg_confirm_password" class="form-control-custom" placeholder="Nhập lại mật khẩu trên" required minlength="8" maxlength="72" autocomplete="new-password">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-auth-success">
+                            <span>Đăng Ký Tài Khoản</span>
+                            <i class="bi bi-check-lg"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+        </div> <!-- End .auth-form-pane -->
+    </div> <!-- End .auth-card -->
 
     <script>
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             const pwd = document.getElementById('reg_password').value;
             const confirmPwd = document.getElementById('reg_confirm_password').value;
             const jsAlert = document.getElementById('jsErrorAlert');
+            const jsAlertText = document.getElementById('jsErrorAlertText') || jsAlert;
 
             if (pwd !== confirmPwd) {
                 e.preventDefault();
-                jsAlert.innerText = "Mật khẩu xác nhận không khớp! Vui lòng kiểm tra lại.";
+                jsAlertText.innerText = "Mật khẩu xác nhận không khớp! Vui lòng kiểm tra lại.";
                 jsAlert.classList.remove('d-none');
                 return false;
             }
             jsAlert.classList.add('d-none');
         });
 
-	function toggleRoleFormat() {
+        function toggleRoleFormat() {
             const role = document.getElementById('reg_role').value;
             const userInput = document.getElementById('reg_username');
             const userLabel = document.getElementById('lbl_username');
-            document.getElementById('inviteBox').classList.toggle('d-none', role !== 'teacher');
+            const inviteBox = document.getElementById('inviteBox');
+            
+            inviteBox.classList.toggle('d-none', role !== 'teacher');
 
             if (role === 'student') {
-                userLabel.innerText = "Mã số Sinh viên (Chỉ nhập số)";
+                userLabel.innerHTML = '<i class="bi bi-hash"></i> Mã số Sinh viên (Chỉ nhập số)';
                 userInput.placeholder = "Chỉ nhập số (VD: 2001210123)";
                 userInput.setAttribute("inputmode", "numeric");
                 userInput.setAttribute("pattern", "[0-9]+");
                 userInput.value = userInput.value.replace(/[^0-9]/g, '');
             } else {
-                userLabel.innerText = "Tên tài khoản (Giảng viên)";
+                userLabel.innerHTML = '<i class="bi bi-person-badge"></i> Tên tài khoản (Giảng viên)';
                 userInput.placeholder = "Ví dụ: giaovien1";
                 userInput.removeAttribute("inputmode");
                 userInput.removeAttribute("pattern");

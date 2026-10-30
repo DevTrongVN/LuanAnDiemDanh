@@ -73,9 +73,11 @@ def build_pruned_v3_int8_model():
         try:
             print(f"⚡ [Model] Đang nạp trọng số nhanh từ: {SAVED_WEIGHTS_PATH}")
             quantized_model = convert_fx(prepared_model)
+            start_load = time.time()
             quantized_model.load_state_dict(torch.load(SAVED_WEIGHTS_PATH, map_location=device))
+            load_time_ms = (time.time() - start_load) * 1000
             quantized_model.eval()
-            print("✅ Nạp mô hình Static INT8 thành công!")
+            print(f"✅ Nạp mô hình Static INT8 thành công! (Thời gian: {load_time_ms:.2f} ms)")
             return quantized_model
         except Exception as e:
             print(f"⚠️ Nạp state_dict thất bại ({e}). Đang tạo mới...")
@@ -134,12 +136,12 @@ PIPELINE_CONFIG = {
         "rec_thresh": 0.7,
         "scale": 0.6,               # chỉ dùng cho lượt quét toàn khung
         "detect_max_side": 640,     # cạnh dài của ảnh thu nhỏ dành riêng cho MediaPipe; crop mặt luôn lấy từ frame gốc
-        "grid": (2, 2),
-        "padding_ratio": 0.30,      # vùng chồng lấn giữa các tile
-        "nms_iou": 0.30,
+        "grid": (1, 1),
+        "padding_ratio": 0,      # vùng chồng lấn giữa các tile 0.30
+        "nms_iou": 0,           #0.30
         "full_frame_pass": True,    # bắt mặt lớn vắt ngang ranh giới
         "edge_margin_px": 4,
-        "voting_window_frames": 20,
+        "voting_window_frames": 10,
         "min_vote_ratio": 0.6,
         "max_disappeared": 4        # Tăng lên 4 theo lưu ý để chống rớt track
     }
@@ -169,6 +171,7 @@ def get_thread_face_detector():
 def load_face_bank_to_ram(db_csv_path=DB_CSV_PATH):
     global GLOBAL_FACE_BANK, GLOBAL_STUDENT_MAP
     _REALTIME_MATRIX_CACHE.clear()
+    start_time = time.time()
     if os.path.exists(db_csv_path):
         try:
             GLOBAL_FACE_BANK = pd.read_csv(db_csv_path, encoding='utf-8-sig')
@@ -189,7 +192,8 @@ def load_face_bank_to_ram(db_csv_path=DB_CSV_PATH):
                 "HoTen": ho_ten,
                 "vectors": vectors
             }
-        print(f"⚡ [RAM Cache] Đã lập chỉ mục {len(GLOBAL_STUDENT_MAP)} sinh viên vào RAM.")
+        elapsed_ms = (time.time() - start_time) * 1000
+        print(f"⚡ [RAM Cache] Đã lập chỉ mục {len(GLOBAL_STUDENT_MAP)} sinh viên vào RAM mất: {elapsed_ms:.2f} ms.")
     else:
         GLOBAL_FACE_BANK = pd.DataFrame()
         GLOBAL_STUDENT_MAP = {}
@@ -323,6 +327,7 @@ class FaceTracker:
         self.iou_thresh = iou_thresh
 
     def update(self, boxes):
+        start_tracker = time.time()
         if len(boxes) == 0:
             for tid in list(self.tracks.keys()):
                 self.tracks[tid]["disappeared"] += 1
@@ -383,7 +388,10 @@ class FaceTracker:
                 self.tracks[self.next_track_id] = {"bbox": b, "disappeared": 0, "history": []}
                 active_tracks.append((self.next_track_id, b))
                 self.next_track_id += 1
-
+        tracker_ms = (time.time() - start_tracker) * 1000
+        # In ra nếu mất hơn 2ms để tiện theo dõi, tránh spam console
+        if tracker_ms > 2.0:
+            print(f"⏱️ [FaceTracker] Xử lý gộp {len(boxes)} boxes mất: {tracker_ms:.2f} ms")
         return active_tracks
 
 
@@ -1343,8 +1351,11 @@ def _run_realtime_faces_batch(frames_meta, crops_rgb, crops_raw, class_mssv_list
         per_track = {}   # tid -> [(pred, sim, jpeg_bytes, frame_seq)]
         if valid:
             if has_reg:
+                start_match = time.time() # Bắt đầu đo nhân ma trận
                 sims = np.vstack([e for _, e in valid]) @ db_mat.T      # (N, M)
                 best_idx, best_sim = sims.argmax(axis=1), sims.max(axis=1)
+                match_ms = (time.time() - start_match) * 1000
+                print(f"⏱️ [So khớp DB] Tìm kiếm {len(valid)} khuôn mặt trong CSDL mất: {match_ms:.2f} ms")
 
             for i, ((tid, _, raw, seq), _) in enumerate(valid):
                 trk = tracker.tracks.get(tid)

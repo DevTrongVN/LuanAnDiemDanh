@@ -127,7 +127,7 @@ def client_ip(request: Request) -> str:
 
 MAX_WORKERS = os.cpu_count() or 4
 ai_pool = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
-realtime_pool = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+realtime_pool = concurrent.futures.ThreadPoolExecutor(max_workers=MAX_WORKERS)
 
 
 @app.on_event("startup")

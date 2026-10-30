@@ -2,43 +2,544 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Nhật Ký Hệ Thống</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Admin - Nhật Ký Hoạt Động Hệ Thống AI</title>
+    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-        body { background-color: #1e1e2f; color: #c8c8d2; font-family: monospace; }
-        .log-container { background-color: #27293d; border-radius: 8px; padding: 20px; max-height: 75vh; overflow-y: auto; }
-        .log-line { border-bottom: 1px solid #3b3d52; padding: 8px 0; font-size: 14px; }
-        .log-info { color: #00d6b3; }
-        .log-error { color: #fd5d93; }
-        .log-warning { color: #ff8d72; }
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --terminal-bg: #0f172a;
+            --terminal-header: #1e293b;
+            --terminal-border: #334155;
+            --terminal-text: #e2e8f0;
+            --log-info: #38bdf8;
+            --log-error: #f87171;
+            --log-warning: #fbbf24;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0b1120;
+            color: #cbd5e1;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding-bottom: max(40px, env(safe-area-inset-bottom));
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        /* Top Bar */
+        .admin-navbar {
+            background: #111827;
+            border-bottom: 1px solid #1f2937;
+            padding: max(12px, env(safe-area-inset-top)) 0 12px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand-custom {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: #f3f4f6;
+            text-decoration: none;
+        }
+
+        .brand-icon-admin {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 18px;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.35);
+        }
+
+        .server-status-pill {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.775rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px #10b981;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .btn-back-home {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .btn-back-home:hover {
+            background: #374151;
+            color: #ffffff;
+            border-color: #4b5563;
+        }
+
+        /* Filter Toolbar */
+        .toolbar-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 16px;
+            margin-top: 24px;
+        }
+
+        .btn-filter {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 0.825rem;
+            font-weight: 600;
+            border: 1px solid #374151;
+            background: #1f2937;
+            color: #9ca3af;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-filter:hover {
+            color: #ffffff;
+            background: #374151;
+        }
+
+        .btn-filter.active {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+        }
+
+        /* Terminal Window */
+        .terminal-window {
+            background-color: var(--terminal-bg);
+            border: 1px solid var(--terminal-border);
+            border-radius: 14px;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+
+        .terminal-header {
+            background-color: var(--terminal-header);
+            border-bottom: 1px solid var(--terminal-border);
+            padding: 12px 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .mac-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mac-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .mac-close { background-color: #ef4444; }
+        .mac-min { background-color: #f59e0b; }
+        .mac-max { background-color: #10b981; }
+
+        .terminal-title {
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #94a3b8;
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .log-container {
+            padding: 16px;
+            max-height: 75vh;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        /* Scrollbar */
+        .log-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .log-container::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .log-container::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        .log-container::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .log-line {
+            border-bottom: 1px solid rgba(51, 65, 85, 0.4);
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background 0.15s ease;
+            word-break: break-all;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .log-line:hover {
+            background-color: rgba(255, 255, 255, 0.04);
+        }
+
+        .log-line:last-child {
+            border-bottom: none;
+        }
+
+        .log-info {
+            color: var(--log-info);
+        }
+
+        .log-error {
+            color: var(--log-error);
+            background-color: rgba(239, 68, 68, 0.08);
+            border-left: 3px solid #ef4444;
+        }
+
+        .log-warning {
+            color: var(--log-warning);
+            background-color: rgba(245, 158, 11, 0.08);
+            border-left: 3px solid #f59e0b;
+        }
+
+        .log-index {
+            color: #64748b;
+            font-size: 0.775rem;
+            user-select: none;
+            min-width: 32px;
+        }
+
+        .log-content {
+            flex-grow: 1;
+        }
+
+        
+        /* Admin Metrics Row (Desktop 3 Cột, Mobile 1 Cột) */
+        .admin-metrics-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .admin-metric-card {
+            background: #111827;
+            border: 1px solid #1f2937;
+            border-radius: 12px;
+            padding: 18px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .admin-metric-card:hover {
+            transform: translateY(-2px);
+            border-color: #374151;
+        }
+
+        .metric-icon-box {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .metric-title {
+            font-size: 0.775rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 2px;
+        }
+
+        .metric-value {
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 2px;
+        }
+
+        .metric-sub {
+            font-size: 0.725rem;
+        }
+
+        .btn-group-filter {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+        }
+
+        /* Media Queries theo từng nhóm thiết bị */
+        @media (max-width: 768px) {
+            .navbar-brand-custom span:last-child {
+                font-size: 1rem;
+            }
+            .toolbar-container {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+            .toolbar-container .d-flex {
+                width: 100%;
+                overflow-x: auto;
+                padding-bottom: 4px;
+            }
+            .btn-filter {
+                white-space: nowrap;
+                padding: 5px 10px;
+                font-size: 0.775rem;
+            }
+            .log-line {
+                font-size: 0.775rem;
+                padding: 6px 8px;
+            }
+            .log-index {
+                min-width: 24px;
+                font-size: 0.7rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .navbar-brand-custom span:last-child {
+                font-size: 0.9rem;
+            }
+            .brand-icon-admin {
+                width: 32px;
+                height: 32px;
+                font-size: 16px;
+            }
+            .btn-back-home {
+                padding: 5px 8px;
+                font-size: 0.775rem;
+            }
+            .btn-back-home span {
+                display: none;
+            }
+            .terminal-window {
+                border-radius: 10px;
+            }
+            .terminal-header {
+                padding: 10px 14px;
+            }
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark mb-4 border-bottom border-secondary">
-        <div class="container-fluid">
-            <span class="navbar-brand mb-0 h1 text-info">⚙️ AI Server Log Dashboard</span>
-            <a href="/" class="btn btn-sm btn-outline-light">Quay lại Đăng nhập</a>
-        </div>
-    </nav>
+    <!-- Header Navbar -->
+    <header class="admin-navbar">
+        <div class="container-fluid px-4 d-flex justify-content-between align-items-center">
+            <a href="/admin" class="navbar-brand-custom">
+                <span class="brand-icon-admin">
+                    <i class="bi bi-cpu-fill"></i>
+                </span>
+                <span>AI Server Observability Dashboard</span>
+            </a>
 
-    <div class="container-fluid px-4">
-        <h5 class="mb-3">Nhật ký hoạt động hệ thống (200 sự kiện gần nhất)</h5>
-        <div class="log-container shadow-lg">
-            {% if logs %}
-                {% for log in logs %}
-                    <!-- Phân loại màu sắc dựa trên keyword trong log -->
-                    <div class="log-line 
-                        {% if 'ERROR' in log or 'LỖI' in log %} log-error 
-                        {% elif 'WARNING' in log %} log-warning 
-                        {% else %} log-info {% endif %}">
-                        {{ log }}
-                    </div>
-                {% endfor %}
-            {% else %}
-                <div class="text-muted">Hệ thống chưa có sự kiện nào được ghi nhận.</div>
-            {% endif %}
+            <div class="d-flex align-items-center gap-3">
+                <span class="server-status-pill d-none d-sm-inline-flex">
+                    <span class="pulse-dot"></span>
+                    <span>Hệ Thống Trực Tuyến</span>
+                </span>
+                <a href="/" class="btn-back-home">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Quay lại Đăng nhập</span>
+                </a>
+            </div>
         </div>
-    </div>
+    </header>
+
+    <main class="container-fluid px-4">
+        <!-- Toolbar & Filter -->
+        <!-- Server Metrics Cards (Desktop 3 Cột / Mobile 1 Cột) -->
+        <div class="admin-metrics-row mb-4">
+            <div class="admin-metric-card">
+                <div class="metric-icon-box text-info">
+                    <i class="bi bi-activity"></i>
+                </div>
+                <div>
+                    <div class="metric-title">Tổng Sự Kiện Đã Ghi</div>
+                    <div class="metric-value text-white">{{ logs|length if logs else 0 }} / 200</div>
+                    <div class="metric-sub text-muted">Vòng lặp bộ đệm RAM</div>
+                </div>
+            </div>
+
+            <div class="admin-metric-card">
+                <div class="metric-icon-box text-success">
+                    <i class="bi bi-cpu-fill"></i>
+                </div>
+                <div>
+                    <div class="metric-title">Trạng Thái AI Engine</div>
+                    <div class="metric-value text-success">Trực Tuyến</div>
+                    <div class="metric-sub text-muted">MediaPipe WASM + InsightFace</div>
+                </div>
+            </div>
+
+            <div class="admin-metric-card">
+                <div class="metric-icon-box text-warning">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+                <div>
+                    <div class="metric-title">Bảo Vệ Phiên & Log</div>
+                    <div class="metric-value text-warning">Giám Sát 24/7</div>
+                    <div class="metric-sub text-muted">Tự động đẩy log realtime</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="toolbar-container">
+            <div>
+                <h5 class="mb-1 text-white fw-bold d-flex align-items-center gap-2">
+                    <i class="bi bi-terminal text-info"></i>
+                    <span>Nhật ký hoạt động hệ thống</span>
+                </h5>
+                <small class="text-muted">Hiển thị tối đa 200 sự kiện gần nhất được ghi nhận từ AI Server</small>
+            </div>
+
+            <!-- Quick Filter Buttons -->
+            <div class="btn-group-filter d-flex gap-2">
+                <button type="button" class="btn-filter active" onclick="filterLogs('all', this)">
+                    <i class="bi bi-list-ul"></i> Tất cả
+                </button>
+                <button type="button" class="btn-filter text-danger" onclick="filterLogs('error', this)">
+                    <i class="bi bi-x-octagon-fill"></i> Lỗi (Error)
+                </button>
+                <button type="button" class="btn-filter text-warning" onclick="filterLogs('warning', this)">
+                    <i class="bi bi-exclamation-triangle-fill"></i> Cảnh báo (Warning)
+                </button>
+                <button type="button" class="btn-filter text-info" onclick="filterLogs('info', this)">
+                    <i class="bi bi-info-circle-fill"></i> Thông tin (Info)
+                </button>
+            </div>
+        </div> </div>
+
+        <!-- Terminal Log Viewer -->
+        <div class="terminal-window shadow-lg mb-4">
+            <div class="terminal-header">
+                <div class="mac-buttons">
+                    <span class="mac-btn mac-close"></span>
+                    <span class="mac-btn mac-min"></span>
+                    <span class="mac-btn mac-max"></span>
+                </div>
+                <div class="terminal-title">
+                    <i class="bi bi-file-earmark-code"></i> system_events.log
+                </div>
+                <div class="text-muted small">
+                    UTF-8
+                </div>
+            </div>
+
+            <div class="log-container" id="logScrollContainer">
+                {% if logs %}
+                    {% for log in logs %}
+                        <!-- Phân loại màu sắc dựa trên keyword trong log (Giữ nguyên 100% logic cũ) -->
+                        <div class="log-line 
+                            {% if 'ERROR' in log or 'LỖI' in log %} log-error 
+                            {% elif 'WARNING' in log %} log-warning 
+                            {% else %} log-info {% endif %}">
+                            <span class="log-index">#{{ loop.index }}</span>
+                            <span class="log-content">{{ log }}</span>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-muted p-4 text-center">
+                        <i class="bi bi-inbox fs-3 d-block mb-2 text-secondary"></i>
+                        Hệ thống chưa có sự kiện nào được ghi nhận.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+    <script>
+        function filterLogs(type, btnElement) {
+            document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+            if (btnElement) btnElement.classList.add('active');
+
+            const lines = document.querySelectorAll('.log-line');
+            lines.forEach(line => {
+                if (type === 'all') {
+                    line.style.display = 'flex';
+                } else if (type === 'error') {
+                    line.style.display = line.classList.contains('log-error') ? 'flex' : 'none';
+                } else if (type === 'warning') {
+                    line.style.display = line.classList.contains('log-warning') ? 'flex' : 'none';
+                } else if (type === 'info') {
+                    line.style.display = line.classList.contains('log-info') ? 'flex' : 'none';
+                }
+            });
+        }
+    </script>
 </body>
 </html>

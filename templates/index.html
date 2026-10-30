@@ -2,35 +2,224 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hệ Thống Điểm Danh AI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Hệ Thống Điểm Danh AI - Quét Toàn Cảnh</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; margin: auto; }
-        .form-group { margin-bottom: 20px; }
-        select, input, button { width: 100%; padding: 10px; margin-top: 5px; font-size: 16px; }
-        button { background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --card-border: #e2e8f0;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #eff6ff 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: max(20px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+            margin: 0;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        .main-card {
+            width: 100%;
+            max-width: 500px;
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08);
+            overflow: hidden;
+            padding: clamp(22px, 5vw, 36px);
+        }
+
+        .brand-header {
+            text-align: center;
+            margin-bottom: 28px;
+        }
+
+        .brand-icon-wrapper {
+            width: 54px;
+            height: 54px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 24px;
+            margin-bottom: 12px;
+            box-shadow: 0 8px 16px -4px rgba(37, 99, 235, 0.35);
+        }
+
+        .brand-header h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-main);
+            margin: 0 0 6px 0;
+        }
+
+        .brand-header p {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .form-group-custom {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .form-group-custom:focus-within {
+            border-color: var(--primary);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-label-custom {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-submit-action {
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #ffffff;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 8px 16px -4px rgba(37, 99, 235, 0.35);
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-submit-action:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -4px rgba(37, 99, 235, 0.45);
+        }
+
+        .card-footer-nav {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .card-footer-nav a {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .card-footer-nav a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 576px) {
+            .brand-header h2 {
+                font-size: 1.25rem;
+            }
+            .brand-icon-wrapper {
+                width: 48px;
+                height: 48px;
+                font-size: 22px;
+            }
+            .form-control,
+            .form-select {
+                font-size: 16px;
+            }
+            .btn-submit-action {
+                min-height: 48px;
+                padding: 12px;
+            }
+        }
     </style>
 </head>
 <body>
-    <h2>ĐIỂM DANH LỚP HỌC</h2>
-    <form action="/api/diem_danh" method="post" enctype="multipart/form-data">
-        
-        <!-- Dropdown chọn lớp để hệ thống khoanh vùng CSDL -->
-        <div class="form-group">
-            <label>Chọn Lớp Học:</label>
-            <select name="class_code" required>
-                <option value="15DHKHDL03">Lớp Khai thác Dữ liệu 03</option>
-                <option value="15DHKHDL05">Lớp Khai thác Dữ liệu 05</option>
-            </select>
+    <div class="main-card">
+        <div class="brand-header">
+            <div class="brand-icon-wrapper">
+                <i class="bi bi-camera-reels"></i>
+            </div>
+            <h2>ĐIỂM DANH LỚP HỌC</h2>
+            <p>Hệ thống phân tích đa luồng và đối chiếu CSDL tự động</p>
         </div>
 
-        <!-- Thuộc tính capture giúp mở thẳng Camera trên di động -->
-        <div class="form-group">
-            <label>Chụp ảnh hoặc Quay video toàn cảnh:</label>
-            <input type="file" name="file" accept="video/*,image/*" capture="environment" required>
-        </div>
+        <form action="/api/diem_danh" method="post" enctype="multipart/form-data">
+            <!-- Dropdown chọn lớp để hệ thống khoanh vùng CSDL -->
+            <div class="form-group-custom">
+                <label class="form-label-custom">
+                    <i class="bi bi-mortarboard-fill text-primary"></i>
+                    <span>Chọn Lớp Học:</span>
+                </label>
+                <select name="class_code" class="form-select border-0 bg-transparent p-0 fw-semibold" required>
+                    <option value="15DHKHDL03">Lớp Khai thác Dữ liệu 03</option>
+                    <option value="15DHKHDL05">Lớp Khai thác Dữ liệu 05</option>
+                </select>
+            </div>
 
-        <button type="submit">Bắt Đầu Điểm Danh AI</button>
-    </form>
+            <!-- Thuộc tính capture giúp mở thẳng Camera trên di động -->
+            <div class="form-group-custom">
+                <label class="form-label-custom">
+                    <i class="bi bi-camera-fill text-success"></i>
+                    <span>Chụp ảnh hoặc Quay video toàn cảnh:</span>
+                </label>
+                <input type="file" name="file" class="form-control" accept="video/*,image/*" capture="environment" required>
+                <small class="text-muted d-block mt-2" style="font-size: 0.775rem;">
+                    <i class="bi bi-phone"></i> Trên điện thoại, hệ thống sẽ mở camera chụp/quay trực tiếp.
+                </small>
+            </div>
+
+            <button type="submit" class="btn-submit-action">
+                <i class="bi bi-lightning-charge-fill"></i>
+                <span>Bắt Đầu Điểm Danh AI</span>
+            </button>
+        </form>
+
+        <div class="card-footer-nav">
+            <a href="/login">
+                <i class="bi bi-box-arrow-in-right"></i>
+                <span>Trở về trang Đăng nhập hệ thống</span>
+            </a>
+        </div>
+    </div>
 </body>
 </html>

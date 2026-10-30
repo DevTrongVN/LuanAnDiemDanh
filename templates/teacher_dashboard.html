@@ -1,208 +1,1029 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Điểm Danh AI - Bảng Điều Khiển Giảng Viên</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
-        body { background-color: #f4f6f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-        .stat-card { border-radius: 12px; }
-        .media-preview { max-width: 100%; border-radius: 8px; border: 2px solid #0d6efd; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-        .student-crop-card { border: 1px solid #dee2e6; border-radius: 8px; overflow: hidden; background: #fff; width: 160px; text-align: center; position: relative; display: flex; flex-direction: column; }
-        .student-crop-card img { width: 100%; height: 160px; object-fit: cover; }
-        .student-crop-card.unknown-card { border-color: #dc3545; }
-        #webcamLive { width: 100%; max-height: 420px; object-fit: cover; border-radius: 8px; background-color: #000; }
-        .filter-btn.active { font-weight: bold; }
-        
+
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            --primary-border: #bfdbfe;
+            --secondary-bg: #f8fafc;
+            --card-border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f1f5f9;
+            color: var(--text-main);
+            min-height: 100vh;
+            margin: 0;
+            padding-bottom: max(60px, env(safe-area-inset-bottom));
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        /* Top Navigation Header */
+        .dashboard-navbar {
+            background: #ffffff;
+            border-bottom: 1px solid var(--card-border);
+            padding: max(10px, env(safe-area-inset-top)) 0 10px 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand-custom {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            font-size: clamp(1rem, 3.5vw, 1.25rem);
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 20px;
+            box-shadow: 0 4px 10px -2px rgba(37, 99, 235, 0.3);
+            flex-shrink: 0;
+        }
+
+        .teacher-badge {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .system-pill {
+            background: #dcfce7;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.775rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .avatar-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #dbeafe;
+            color: var(--primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+        }
+
+        .btn-logout {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            min-height: 40px;
+            cursor: pointer;
+        }
+
+        .btn-logout:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fca5a5;
+        }
+
+        /* Container chính mở rộng tối đa 1400px trên Desktop */
+        .teacher-main-container {
+            max-width: 1400px;
+            width: 100%;
+            margin-inline: auto;
+            padding-inline: clamp(12px, 3vw, 24px);
+        }
+
+        /* Hero / Page Banner */
+        .dashboard-header {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            padding: clamp(16px, 3vw, 24px);
+            margin-bottom: 24px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .dashboard-header h1 {
+            font-size: clamp(1.2rem, 3.2vw, 1.5rem);
+            font-weight: 800;
+            margin: 0 0 4px 0;
+            color: var(--text-main);
+            letter-spacing: -0.01em;
+        }
+
+        .dashboard-header p {
+            font-size: clamp(0.825rem, 2vw, 0.9rem);
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* ==============================================================
+           BỐ CỤC ĐỘC LẬP THEO THIẾT BỊ (RESPONSIVE GRID)
+           ============================================================== */
+        /* Mặc định trên Mobile / Tablet: Xếp chồng 1 cột dọc tuần tự */
+        .teacher-dashboard-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .teacher-control-column,
+        .teacher-results-column {
+            width: 100%;
+        }
+
+        /* Desktop (>= 1100px): Chuyển thành bố cục 2 cột song song khi có kết quả */
+        @media (min-width: 1100px) {
+            .teacher-dashboard-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                max-width: 900px;
+                margin-inline: auto;
+                gap: 24px;
+                transition: max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            /* Khi có kết quả điểm danh: bung 2 cột song song (Camera bên trái, Kết quả bên phải) */
+            .teacher-dashboard-grid.has-active-results,
+            .teacher-dashboard-grid:not(:has(#resultArea.d-none)) {
+                max-width: 1400px;
+                grid-template-columns: minmax(520px, 1.15fr) minmax(440px, 1fr);
+                align-items: start;
+            }
+
+            .teacher-dashboard-grid.has-active-results .teacher-control-column,
+            .teacher-dashboard-grid:not(:has(#resultArea.d-none)) .teacher-control-column {
+                position: sticky;
+                top: 75px;
+                z-index: 10;
+            }
+        }
+
+        /* Segmented Nav Tabs */
+        .segmented-control {
+            background-color: #e2e8f0;
+            padding: 5px;
+            border-radius: 14px;
+            display: flex;
+            gap: 6px;
+            margin-bottom: 24px;
+            border: 1px solid #cbd5e1;
+        }
+
+        .segmented-control .nav-item {
+            flex: 1;
+        }
+
+        .segmented-control .nav-link {
+            width: 100%;
+            border-radius: 10px;
+            font-size: clamp(0.85rem, 2vw, 0.95rem);
+            font-weight: 700;
+            color: #475569;
+            padding: 12px 18px;
+            border: none;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            min-height: 44px;
+        }
+
+        .segmented-control .nav-link:hover {
+            color: var(--text-main);
+        }
+
+        .segmented-control .nav-link.active {
+            background-color: #ffffff;
+            color: var(--primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Card System */
+        .modern-card {
+            background: #ffffff;
+            border-radius: 16px;
+            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+            padding: clamp(16px, 3vw, 24px);
+            margin-bottom: 0;
+        }
+
+        /* Upload Inputs Grid: Desktop 2 cột, Mobile 1 cột */
+        .upload-inputs-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .upload-inputs-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 16px;
+            }
+        }
+
+        .upload-input-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 0;
+            transition: border-color 0.2s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .upload-input-box:focus-within {
+            border-color: var(--primary);
+            background: #ffffff;
+        }
+
+        .upload-input-box label {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn-submit-action {
+            width: 100%;
+            padding: 14px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #ffffff;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 8px 16px -4px rgba(37, 99, 235, 0.35);
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            min-height: 48px;
+            touch-action: manipulation;
+        }
+
+        .btn-submit-action:hover:not(:disabled) {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 12px 20px -4px rgba(37, 99, 235, 0.45);
+        }
+
+        .btn-submit-action:disabled {
+            opacity: 0.75;
+            cursor: not-allowed;
+        }
+
+        /* Realtime Viewport & HUD */
+        .camera-hud-container {
+            position: relative;
+            background: #000000;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+            margin-bottom: 18px;
+            height: clamp(250px, 46vw, 440px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #webcamLive {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Khung căn chỉnh khuôn mặt mờ trên camera realtime */
+        .realtime-face-guide {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .guide-oval-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            width: 100%;
+            padding: 16px;
+        }
+
+        .face-silhouette-svg {
+            width: auto;
+            height: 72%;
+            max-height: 290px;
+            min-height: 170px;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .guide-text-pill {
+            margin-top: 10px;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(8px);
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 5px 16px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+            letter-spacing: 0.02em;
+            transition: all 0.3s ease;
+        }
+
+        .realtime-face-guide.scan-success .face-silhouette-svg ellipse:first-child {
+            stroke: #10b981 !important;
+            filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.8));
+        }
+
+        .realtime-face-guide.scan-success .guide-text-pill {
+            background: rgba(16, 185, 129, 0.85);
+            border-color: rgba(255, 255, 255, 0.4);
+            color: #ffffff;
+        }
+
         .realtime-toast {
             position: absolute;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            color: white;
-            padding: 10px 25px;
+            color: #ffffff;
+            padding: 10px 24px;
             border-radius: 30px;
-            font-weight: bold;
-            font-size: 1.1rem;
+            font-weight: 700;
+            font-size: clamp(0.85rem, 2.5vw, 1rem);
             z-index: 100;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            transition: opacity 0.4s ease-in-out;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            transition: opacity 0.3s ease-in-out;
             opacity: 0;
-            pointer-events: none; 
+            pointer-events: none;
+            backdrop-filter: blur(8px);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            max-width: 90%;
+            text-align: center;
         }
+
+        /* Controls under camera */
+        .camera-controls-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .btn-realtime-start {
+            padding: 12px 28px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            min-height: 48px;
+            touch-action: manipulation;
+        }
+
+        .btn-cam-switch {
+            padding: 11px 18px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border-radius: 12px;
+            color: #475569;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+            min-height: 48px;
+            touch-action: manipulation;
+        }
+
+        .btn-cam-switch:hover {
+            background: #f1f5f9;
+            color: var(--text-main);
+        }
+
+        /* Stat KPI Cards */
+        .stat-card-modern {
+            border-radius: 14px;
+            padding: clamp(12px, 2vw, 18px) clamp(8px, 1.5vw, 16px);
+            color: #ffffff;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s ease;
+        }
+
+        .stat-card-modern:hover {
+            transform: translateY(-2px);
+        }
+
+        .stat-card-present {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .stat-card-absent {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        }
+
+        .stat-card-unregistered {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .stat-label {
+            font-size: clamp(0.7rem, 1.8vw, 0.825rem);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+        }
+
+        .stat-number {
+            font-size: clamp(1.4rem, 4vw, 2.2rem);
+            font-weight: 800;
+            margin: 4px 0;
+            letter-spacing: -0.03em;
+        }
+
+        .stat-count-sub {
+            font-size: clamp(0.72rem, 1.8vw, 0.85rem);
+            font-weight: 600;
+            opacity: 0.95;
+            background: rgba(0, 0, 0, 0.15);
+            padding: 2px 8px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        /* Crop Gallery Cards */
+        #studentCropGallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: flex-start;
+            padding: 14px;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            background-color: #f8fafc;
+            max-height: 440px;
+            overflow-y: auto;
+        }
+
+        .student-crop-card {
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #ffffff;
+            width: 155px;
+            text-align: center;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            transition: all 0.2s ease;
+        }
+
+        .student-crop-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px -2px rgba(0,0,0,0.08);
+            border-color: #94a3b8;
+        }
+
+        .student-crop-card img {
+            width: 100%;
+            height: 145px;
+            object-fit: cover;
+            display: block;
+            background-color: #f1f5f9;
+        }
+
+        .student-crop-card.unknown-card {
+            border-color: #ef4444;
+            box-shadow: 0 2px 6px rgba(239, 68, 68, 0.15);
+        }
+
+        .student-crop-card.unknown-card:hover {
+            border-color: #dc2626;
+            box-shadow: 0 8px 16px -2px rgba(239, 68, 68, 0.25);
+        }
+
+        /* Filter buttons */
+        .filter-btn-group .btn {
+            font-size: 0.825rem;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 8px;
+            min-height: 36px;
+        }
+
+        .filter-btn.active {
+            font-weight: 700;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Media Preview */
+        .media-preview {
+            max-width: 100%;
+            border-radius: 12px;
+            border: 2px solid var(--primary);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        /* Progress Bar */
+        .progress-custom {
+            height: 12px;
+            border-radius: 20px;
+            background-color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        /* ==============================================================
+           MEDIA QUERIES: ĐIỀU CHỈNH CHI TIẾT THEO TỪNG THIẾT BỊ
+           ============================================================== */
+        /* Tablet (768px - 1099px) */
+        @media (min-width: 768px) and (max-width: 1099px) {
+            .student-crop-card {
+                width: calc(33.333% - 10px);
+            }
+            .dashboard-header {
+                padding: 20px;
+            }
+            .camera-hud-container {
+                height: 380px;
+            }
+        }
+
+        /* Mobile (< 768px) */
+        @media (max-width: 767px) {
+            .dashboard-header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 16px;
+                gap: 12px;
+            }
+            .dashboard-header h1 {
+                font-size: 1.25rem;
+            }
+            .student-crop-card {
+                width: calc(50% - 6px);
+            }
+            .student-crop-card img {
+                height: 130px;
+            }
+            .camera-hud-container {
+                height: 270px;
+            }
+            .camera-controls-bar {
+                width: 100%;
+            }
+            .btn-realtime-start,
+            .btn-cam-switch {
+                flex: 1 1 140px;
+            }
+        }
+
+        /* Màn hình nhỏ (< 576px) */
+        @media (max-width: 576px) {
+            .navbar-brand-custom span:last-child {
+                font-size: 1.05rem;
+            }
+            .brand-icon {
+                width: 34px;
+                height: 34px;
+                font-size: 18px;
+            }
+            .btn-logout {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+            .segmented-control .nav-link {
+                padding: 10px 8px;
+                font-size: 0.825rem;
+                gap: 6px;
+            }
+            .filter-btn-group .btn {
+                padding: 5px 8px;
+                font-size: 0.75rem;
+            }
+            #downloadExcelBtn,
+            #downloadRealtimeExcelBtn {
+                width: 100%;
+                max-width: 100%;
+                padding: 12px 16px !important;
+                font-size: 0.9rem;
+            }
+        }
+
+        /* Màn hình rất nhỏ (< 380px) */
+        @media (max-width: 380px) {
+            .segmented-control .nav-link {
+                padding: 8px 4px;
+                font-size: 0.75rem;
+                gap: 4px;
+            }
+            .stat-card-modern {
+                padding: 10px 4px;
+            }
+            .student-crop-card {
+                width: calc(50% - 4px);
+            }
+            .student-crop-card img {
+                height: 110px;
+            }
+        }
+
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-dark text-white mb-4 shadow-sm">
+    <!-- Navigation Bar -->
+    <header class="dashboard-navbar">
         <div class="container d-flex justify-content-between align-items-center">
-            <span class="navbar-brand mb-0 h1 fw-bold">🎓 AI Attendance Dashboard</span>
-            <div class="d-flex align-items-center">
-                <span class="badge bg-success me-2">⚡ HTTPS Kích Hoạt</span>
+            <a href="/teacher" class="navbar-brand-custom">
+                <span class="brand-icon">
+                    <i class="bi bi-camera-video-fill"></i>
+                </span>
+                <span>AI Attendance Dashboard</span>
+            </a>
+
+            <div class="teacher-badge">
+                <span class="system-pill d-none d-md-inline-flex">
+                    <i class="bi bi-shield-fill-check"></i>
+                    <span>HTTPS Kích Hoạt</span>
+                </span>
+
+                <div class="d-none d-sm-flex align-items-center gap-2">
+                    <div class="avatar-circle">
+                        {{ name[0] if name else 'G' }}
+                    </div>
+                    <div class="text-end" style="line-height: 1.2;">
+                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ name }}</div>
+                        <small class="text-muted" style="font-size: 0.75rem;">Giảng viên</small>
+                    </div>
+                </div>
+
                 <form action="/logout" method="post" class="m-0">
-                    <button type="submit" class="btn btn-sm btn-outline-light">Đăng Xuất</button>
+                    <button type="submit" class="btn-logout" title="Đăng xuất khỏi hệ thống">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Đăng Xuất</span>
+                    </button>
                 </form>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <div class="container mb-5" style="max-width: 860px;">
-        <div class="card p-4 shadow-sm border-0 border-top border-primary border-4 mb-4">
-            <h4 class="text-center text-primary mb-1 fw-bold">QUÉT LỚP HỌC & ĐIỂM DANH TỰ ĐỘNG</h4>
-            <p class="text-center text-muted mb-4">Giảng viên: <b>{{ name }}</b></p>
+    <main class="container my-4 teacher-main-container">
+        <!-- Page Title & Header Info -->
+        <div class="dashboard-header">
+            <div>
+                <h1>QUÉT LỚP HỌC & ĐIỂM DANH TỰ ĐỘNG</h1>
+                <p>Nền tảng trí tuệ nhân tạo nhận diện khuôn mặt sinh viên thời gian thực</p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fw-semibold">
+                    <i class="bi bi-person-check-fill me-1"></i> Giảng viên: <b>{{ name }}</b>
+                </span>
+            </div>
+        </div>
 
-            <ul class="nav nav-pills nav-fill mb-3" id="pills-tab" role="tablist">
-                <li class="nav-item">
-                    <button class="nav-link active fw-bold" id="pills-upload-tab" data-bs-toggle="pill" data-bs-target="#pills-upload" type="button">📁 Tải File Video / Ảnh</button>
+        <!-- TEACHER DASHBOARD GRID (Desktop Split Layout / Mobile Stack) -->
+        <div id="teacherDashboardGrid" class="teacher-dashboard-grid">
+            <div class="teacher-control-column">
+<!-- MAIN CARD -->
+        <div class="modern-card">
+            <!-- Segmented Switcher Tabs -->
+            <ul class="nav segmented-control" id="pills-tab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="pills-upload-tab" data-bs-toggle="pill" data-bs-target="#pills-upload" type="button" role="tab" aria-controls="pills-upload" aria-selected="true">
+                        <i class="bi bi-cloud-arrow-up-fill"></i>
+                        <span>Tải File Video / Ảnh</span>
+                    </button>
                 </li>
-                <li class="nav-item">
-                    <button class="nav-link fw-bold" id="pills-realtime-tab" data-bs-toggle="pill" data-bs-target="#pills-realtime" type="button">🔴 Camera Quét Real-Time</button>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="pills-realtime-tab" data-bs-toggle="pill" data-bs-target="#pills-realtime" type="button" role="tab" aria-controls="pills-realtime" aria-selected="false">
+                        <i class="bi bi-broadcast-pin"></i>
+                        <span>Camera Quét Real-Time</span>
+                    </button>
                 </li>
             </ul>
 
             <div class="tab-content" id="pills-tabContent">
-                <!-- TAB 1: UPLOAD FILE -->
-                <div class="tab-pane fade show active" id="pills-upload">
+                <!-- ================= TAB 1: UPLOAD FILE ================= -->
+                <div class="tab-pane fade show active" id="pills-upload" role="tabpanel" aria-labelledby="pills-upload-tab">
                     <form id="attendanceForm" enctype="multipart/form-data">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">1. Danh Sách Lớp (File .xls / .xlsx - Không bắt buộc)</label>
-                            <input type="file" id="excelInput" name="excel_file" class="form-control" accept=".xls,.xlsx">
-                            <small class="text-muted">Để trống nếu muốn đối chiếu với toàn bộ sinh viên trong CSDL.</small>
+                        <div class="upload-inputs-grid">
+                            <!-- Danh Sách Lớp Excel -->
+                            <div class="upload-input-box">
+                                <label for="excelInput">
+                                    <i class="bi bi-file-earmark-spreadsheet-fill text-success"></i>
+                                    <span>1. Danh Sách Lớp (File .xls / .xlsx - Không bắt buộc)</span>
+                                </label>
+                                <input type="file" id="excelInput" name="excel_file" class="form-control" accept=".xls,.xlsx">
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle"></i> Để trống nếu muốn hệ thống đối chiếu với toàn bộ sinh viên có trong cơ sở dữ liệu.
+                                </small>
+                            </div>
+
+                            <!-- Video / Ảnh Toàn Cảnh -->
+                            <div class="upload-input-box">
+                                <label for="mediaInput">
+                                    <i class="bi bi-camera-reels-fill text-primary"></i>
+                                    <span>2. Video Toàn Cảnh Hoặc Ảnh Quét Lớp Học</span>
+                                    <span class="badge bg-danger ms-1">Bắt buộc</span>
+                                </label>
+                                <input type="file" id="mediaInput" name="video_file" class="form-control border-primary" accept="video/*,image/*" required>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-lightning-charge"></i> Hệ thống tự động cắt khung hình và phân tích đa luồng bằng AI.
+                                </small>
+                            </div>
                         </div>
-                        <div class="mb-4">
-                            <label class="form-label fw-bold">2. Video Toàn Cảnh Hoặc Ảnh Quét Lớp</label>
-                            <input type="file" id="mediaInput" name="video_file" class="form-control border-primary" accept="video/*,image/*" required>
-                        </div>
-                        <button type="submit" id="submitBtn" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm">
-                            <span id="btnText">🚀 Kích Hoạt Phân Tích</span>
+
+                        <button type="submit" id="submitBtn" class="btn-submit-action">
+                            <i class="bi bi-rocket-takeoff-fill"></i>
+                            <span id="btnText">Kích Hoạt Phân Tích</span>
                             <div id="loadingSpinner" class="spinner-border spinner-border-sm text-light d-none" role="status"></div>
                         </button>
 
-                        <div id="uploadProgressContainer" class="d-none mt-4 p-3 bg-light rounded border">
+                        <!-- Upload Progress Bar Container -->
+                        <div id="uploadProgressContainer" class="d-none mt-4 p-3 bg-light rounded-3 border">
                             <div class="d-flex justify-content-between small text-muted mb-2">
                                 <span id="uploadLogText" class="fw-bold text-primary">Đang chuẩn bị dữ liệu...</span>
                                 <span id="uploadPercentText" class="fw-bold text-dark">0%</span>
                             </div>
-                            <div class="progress" style="height: 12px;">
+                            <div class="progress progress-custom">
                                 <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%;"></div>
                             </div>
                         </div>
                     </form>
                 </div>
 
-                <!-- TAB 2: QUÉT REALTIME -->
-                <div class="tab-pane fade" id="pills-realtime">
-                    <div class="card p-3 mb-3 bg-light border-0">
-                        <label class="form-label fw-bold text-dark">📋 Tải danh sách lớp để giới hạn nhận diện (chỉ nhận diện SV trong lớp):</label>
+                <!-- ================= TAB 2: QUÉT REALTIME ================= -->
+                <div class="tab-pane fade" id="pills-realtime" role="tabpanel" aria-labelledby="pills-realtime-tab">
+                    <!-- Nạp danh sách lớp Excel để khoanh vùng -->
+                    <div class="p-3 mb-3 bg-light rounded-3 border">
+                        <label class="form-label fw-bold text-dark mb-2">
+                            <i class="bi bi-filter-circle text-primary me-1"></i> Tải danh sách lớp để giới hạn nhận diện (chỉ nhận diện SV trong lớp):
+                        </label>
                         <div class="input-group">
                             <input type="file" id="realtimeExcelInput" class="form-control" accept=".xls,.xlsx">
-                            <button class="btn btn-outline-primary fw-bold" type="button" onclick="uploadRealtimeClassList()">Nạp Danh Sách</button>
+                            <button class="btn btn-outline-primary fw-bold" type="button" onclick="uploadRealtimeClassList()">
+                                <i class="bi bi-upload me-1"></i> Nạp Danh Sách
+                            </button>
                         </div>
-                        <small id="classNotice" class="text-muted mt-1">Chưa nạp file danh sách: Hệ thống sẽ quét đối chiếu toàn bộ sinh viên trong CSDL.</small>
+                        <small id="classNotice" class="text-muted mt-2 d-block">
+                            Chưa nạp file danh sách: Hệ thống sẽ quét đối chiếu toàn bộ sinh viên trong CSDL.
+                        </small>
                     </div>
 
-                    <div class="position-relative mb-3 text-center">
+                    <!-- Màn hình Webcam AI HUD -->
+                    <div class="camera-hud-container">
                         <video id="webcamLive" autoplay playsinline muted></video>
+                        
+                        <!-- Lớp phủ khung căn chỉnh khuôn mặt mờ (Silhouette & Oval Guide) -->
+                        <div id="realtimeFaceGuide" class="realtime-face-guide d-none">
+                            <div class="guide-oval-wrapper">
+                                <svg class="face-silhouette-svg" viewBox="0 0 200 250" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <!-- Đường viền Oval mặt chính -->
+                                    <ellipse cx="100" cy="120" rx="65" ry="85" stroke="rgba(255, 255, 255, 0.45)" stroke-width="2.5" stroke-dasharray="6 4" />
+                                    <!-- Mắt trái & Mắt phải -->
+                                    <ellipse cx="75" cy="105" rx="10" ry="5" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" />
+                                    <ellipse cx="125" cy="105" rx="10" ry="5" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" />
+                                    <!-- Sống mũi -->
+                                    <path d="M100 100 V125 L94 132 H104" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <!-- Khuôn miệng -->
+                                    <path d="M82 155 Q100 165 118 155" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" stroke-linecap="round" />
+                                    <!-- Căn chỉnh trán & cằm -->
+                                    <path d="M88 45 Q100 42 112 45" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
+                                    <path d="M88 195 Q100 200 112 195" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
+                                </svg>
+                                <span class="guide-text-pill">
+                                    <i class="bi bi-person-bounding-box me-1"></i> Đưa khuôn mặt vào giữa khung
+                                </span>
+                            </div>
+                        </div>
+
                         <!-- Thẻ hiển thị Overlay Toast -->
                         <div id="realtimeOverlayToast" class="realtime-toast"></div>
                     </div>
                     
-                    <div class="d-flex justify-content-center gap-2 mb-3">
-                        <button type="button" id="startLiveBtn" class="btn btn-success fw-bold px-4" onclick="toggleRealtimeScan()">
-                            ▶️ Bắt Đầu Quét Real-Time
+                    <!-- Thanh điều khiển Camera -->
+                    <div class="camera-controls-bar">
+                        <button type="button" id="startLiveBtn" class="btn btn-success btn-realtime-start" onclick="toggleRealtimeScan()">
+                            <i class="bi bi-play-circle-fill"></i>
+                            <span>Bắt Đầu Quét Real-Time</span>
                         </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="switchCamera()">
-                            🔄 Đổi Camera
+                        <button type="button" class="btn-cam-switch" onclick="switchCamera()">
+                            <i class="bi bi-arrow-repeat"></i>
+                            <span>Đổi Camera</span>
                         </button>
                     </div>
-                    <div id="realtimeNotice" class="alert alert-info py-2 text-center d-none">
-                        Đang quét... Khuôn mặt sẽ được tự động crop và điểm danh.
+
+                    <div id="realtimeNotice" class="alert alert-info py-2 text-center rounded-3 d-none">
+                        <i class="bi bi-info-circle-fill me-1"></i> Đang quét... Khuôn mặt sẽ được tự động crop và điểm danh tức thì.
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- KHUNG KẾT QUẢ ĐIỂM DANH -->
-        <div id="resultArea" class="card p-4 shadow-sm border-0 d-none">
-            <h5 class="text-center text-success mb-3 fw-bold">📊 KẾT QUẢ QUÉT & ĐIỂM DANH</h5>
+                    </div>
 
-            <div id="statsRow" class="row g-2 text-center mb-4">
-                <div class="col-4">
-                    <div class="p-3 bg-success text-white stat-card">
-                        <small>Có mặt</small>
-                        <h2 id="statPresent" class="fw-bold my-1">0%</h2>
-                        <div id="countPresent" class="small">(0 SV)</div>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="p-3 bg-danger text-white stat-card">
-                        <small>Vắng mặt</small>
-                        <h2 id="statAbsent" class="fw-bold my-1">0%</h2>
-                        <div id="countAbsent" class="small">(0 SV)</div>
-                    </div>
-                </div>
-                <div class="col-4">
-                    <div class="p-3 bg-warning text-dark stat-card">
-                        <small>Chưa ĐK</small>
-                        <h2 id="statUnregistered" class="fw-bold my-1">0%</h2>
-                        <div id="countUnregistered" class="small">(0 SV)</div>
-                    </div>
-                </div>
+            <div class="teacher-results-column">
+<!-- ================= KHUNG KẾT QUẢ ĐIỂM DANH ================= -->
+        <div id="resultArea" class="modern-card d-none">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2 border-bottom pb-3">
+                <h4 class="text-success mb-0 fw-bold d-flex align-items-center gap-2">
+                    <i class="bi bi-bar-chart-fill"></i> KẾT QUẢ QUÉT & ĐIỂM DANH
+                </h4>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                    Hoàn tất phân tích
+                </span>
             </div>
 
-            <div class="mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                    <h6 class="fw-bold text-primary mb-0">👤 Khuôn mặt sinh viên được nhận diện từ Video/Ảnh/Realtime:</h6>
-                    <div class="d-flex gap-2">
-                        <div class="btn-group btn-group-sm" role="group">
-                            <button type="button" class="btn btn-outline-secondary filter-btn active" onclick="filterGallery('all')">Tất cả (<span id="countFilterAll">0</span>)</button>
-                            <button type="button" class="btn btn-outline-success filter-btn" onclick="filterGallery('known')">Đã nhận diện (<span id="countFilterKnown">0</span>)</button>
-                            <button type="button" class="btn btn-outline-danger filter-btn" onclick="filterGallery('unknown')">Unknown (<span id="countFilterUnknown">0</span>)</button>
+            <!-- KPI Metric Cards (Có mặt - Vắng mặt - Chưa ĐK) -->
+            <div id="statsRow" class="row g-3 text-center mb-4">
+                <div class="col-md-4 col-4">
+                    <div class="stat-card-modern stat-card-present">
+                        <div class="stat-label">
+                            <i class="bi bi-check-circle-fill"></i> Có mặt
                         </div>
-                        <button type="button" class="btn btn-sm btn-danger fw-bold" onclick="resetGallery()">🗑️ Xóa kết quả</button>
+                        <h2 id="statPresent" class="stat-number">0%</h2>
+                        <div id="countPresent" class="stat-count-sub">(0 SV)</div>
                     </div>
                 </div>
-                <div id="studentCropGallery" class="d-flex flex-wrap gap-2 justify-content-start p-2 border rounded bg-light" style="max-height: 350px; overflow-y: auto;">
-                    <div class="text-muted small p-2 w-100 text-center">Chưa có khuôn mặt nào được ghi nhận.</div>
+                <div class="col-md-4 col-4">
+                    <div class="stat-card-modern stat-card-absent">
+                        <div class="stat-label">
+                            <i class="bi bi-x-circle-fill"></i> Vắng mặt
+                        </div>
+                        <h2 id="statAbsent" class="stat-number">0%</h2>
+                        <div id="countAbsent" class="stat-count-sub">(0 SV)</div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-4">
+                    <div class="stat-card-modern stat-card-unregistered">
+                        <div class="stat-label">
+                            <i class="bi bi-question-circle-fill"></i> Chưa ĐK
+                        </div>
+                        <h2 id="statUnregistered" class="stat-number">0%</h2>
+                        <div id="countUnregistered" class="stat-count-sub">(0 SV)</div>
+                    </div>
                 </div>
             </div>
 
+            <!-- Gallery Khuôn Mặt Sinh Viên Nhận Diện -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <h6 class="fw-bold text-primary mb-0 d-flex align-items-center gap-2">
+                        <i class="bi bi-people-fill"></i> Khuôn mặt sinh viên được nhận diện:
+                    </h6>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <div class="btn-group btn-group-sm filter-btn-group" role="group">
+                            <button type="button" class="btn btn-outline-secondary filter-btn active" onclick="filterGallery('all')">
+                                Tất cả (<span id="countFilterAll">0</span>)
+                            </button>
+                            <button type="button" class="btn btn-outline-success filter-btn" onclick="filterGallery('known')">
+                                Đã nhận diện (<span id="countFilterKnown">0</span>)
+                            </button>
+                            <button type="button" class="btn btn-outline-danger filter-btn" onclick="filterGallery('unknown')">
+                                Unknown (<span id="countFilterUnknown">0</span>)
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-danger fw-bold d-inline-flex align-items-center gap-1" onclick="resetGallery()">
+                            <i class="bi bi-trash3-fill"></i> Xóa kết quả
+                        </button>
+                    </div>
+                </div>
+
+                <div id="studentCropGallery" class="d-flex flex-wrap gap-3 justify-content-start p-3 border rounded-3 bg-light" style="max-height: 420px; overflow-y: auto;">
+                    <div class="text-muted small p-3 w-100 text-center">Chưa có khuôn mặt nào được ghi nhận.</div>
+                </div>
+            </div>
+
+            <!-- Nút Xem Ảnh Toàn Cảnh Phân Vùng -->
             <div class="text-center mb-3">
-                <button class="btn btn-outline-primary px-4 py-2 fw-bold rounded-pill" type="button" onclick="toggleMediaReview()">
-                    🔍 Xem Ảnh Toàn Cảnh Phân Vùng
+                <button class="btn btn-outline-primary px-4 py-2 fw-bold rounded-pill shadow-sm" type="button" onclick="toggleMediaReview()">
+                    <i class="bi bi-aspect-ratio-fill me-1"></i> Xem Ảnh Toàn Cảnh Phân Vùng
                 </button>
             </div>
 
-            <div id="mediaReviewContainer" class="d-none text-center mb-4 border p-3 rounded bg-light">
+            <!-- Khung Ảnh Toàn Cảnh -->
+            <div id="mediaReviewContainer" class="d-none text-center mb-4 border p-3 rounded-3 bg-light">
                 <div id="mediaContainer">
-                    <div class="text-muted small">Chưa có ảnh toàn cảnh. Khi tải ảnh hoặc khi camera realtime bắt được nhiều người cùng lúc, snapshot toàn cảnh sẽ lưu tại đây.</div>
+                    <div class="text-muted small p-3">Chưa có ảnh toàn cảnh. Khi tải ảnh hoặc khi camera realtime bắt được nhiều người cùng lúc, snapshot toàn cảnh sẽ lưu tại đây.</div>
                 </div>
-                <div class="small text-muted mt-2">
-                    <span class="badge bg-success me-1">Khung Xanh</span> Sinh viên trong danh sách &nbsp;|&nbsp;
-                    <span class="badge bg-danger ms-1">Khung Đỏ</span> Người ngoài danh sách / Chưa rõ
+                <div class="small text-muted mt-3">
+                    <span class="badge bg-success me-1"><i class="bi bi-check-lg"></i> Khung Xanh</span> Sinh viên trong danh sách &nbsp;|&nbsp;
+                    <span class="badge bg-danger ms-1"><i class="bi bi-x-lg"></i> Khung Đỏ</span> Người ngoài danh sách / Chưa rõ
                 </div>
             </div>
 
-            <!-- Nút Excel riêng cho chế độ Tải File lên -->
-            <div id="downloadExcelWrapper" class="text-center mt-3 d-none">
-                <a id="downloadExcelBtn" href="#" class="btn btn-success px-4 py-2 fw-bold rounded-pill shadow-sm">
-                    📥 Tải File Excel Kết Quả Ảnh/Video
+            <!-- Nút Tải Excel Chế độ Upload File -->
+            <div id="downloadExcelWrapper" class="text-center mt-4 d-none">
+                <a id="downloadExcelBtn" href="#" class="btn btn-success px-5 py-3 fw-bold rounded-pill shadow">
+                    <i class="bi bi-file-earmark-excel-fill me-1"></i> Tải File Excel Kết Quả Ảnh/Video
                 </a>
             </div>
             
-            <!-- Nút Excel xuất động cho chế độ Realtime -->
-            <div id="downloadRealtimeExcelWrapper" class="text-center mt-3 d-none">
-                <button id="downloadRealtimeExcelBtn" type="button" class="btn btn-primary px-4 py-2 fw-bold rounded-pill shadow-sm" onclick="downloadRealtimeExcel()">
-                    📥 Xuất File Excel Điểm Danh Realtime
+            <!-- Nút Xuất Excel Chế độ Realtime -->
+            <div id="downloadRealtimeExcelWrapper" class="text-center mt-4 d-none">
+                <button id="downloadRealtimeExcelBtn" type="button" class="btn btn-primary px-5 py-3 fw-bold rounded-pill shadow" onclick="downloadRealtimeExcel()">
+                    <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Xuất File Excel Điểm Danh Realtime
                 </button>
             </div>
         </div>
-    </div>
+                </div>
+        </div>
+    </main>
 
     <canvas id="hiddenCanvas" class="d-none"></canvas>
 
+    <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
     <!-- MediaPipe Face Detector (JS). Cùng model blaze_face_short_range với backend (detector.tflite), min_detection_confidence=0.4 như `options` ở pipeline -->
     <script type="module">
         import { FilesetResolver, FaceDetector } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
@@ -223,6 +1044,7 @@
             return pending;
         };
     </script>
+
     <script>
         // Thông số detect realtime lấy từ PIPELINE_CONFIG["realtime"] ở backend (main.py truyền vào) -> không bị lệch cấu hình
         const RT_CFG = {{ rt_cfg | tojson }};
@@ -256,7 +1078,7 @@
             document.getElementById('countFilterUnknown').innerText = allCropsData.filter(x => x.type === 'unknown').length;
 
             if (filtered.length === 0) {
-                gallery.innerHTML = "<div class='text-muted small p-2 w-100 text-center'>Không có khuôn mặt nào phù hợp bộ lọc.</div>";
+                gallery.innerHTML = "<div class='text-muted small p-3 w-100 text-center'>Không có khuôn mặt nào phù hợp bộ lọc.</div>";
                 return;
             }
 
@@ -265,7 +1087,7 @@
                     <!-- Tránh vỡ ảnh nếu crop_url rỗng -->
                     <img src="${st.crop_url ? st.crop_url : '/faces/default.png'}" alt="face" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNlZWVlZWUiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1zaXplPSIxNHB4IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+Tm8gSW1hZ2U8L3RleHQ+PC9zdmc+'">
                     <div class="p-2 d-flex flex-column justify-content-between flex-grow-1">
-                        <div class="fw-bold mb-1" style="font-size: 0.85rem; line-height: 1.3; word-wrap: break-word;">${st.name}</div>
+                        <div class="fw-bold mb-1 text-dark" style="font-size: 0.85rem; line-height: 1.3; word-wrap: break-word;">${st.name}</div>
                         <div class="text-muted small mb-1">${st.mssv}</div>
                         <div>
                             <span class="badge ${st.type === 'known' ? 'bg-success' : 'bg-danger'}" style="font-size:11px;">
@@ -291,7 +1113,7 @@
                 realtimeMssvList = [];
                 const classNotice = document.getElementById('classNotice');
                 classNotice.innerText = "Chưa nạp file danh sách: Hệ thống sẽ quét đối chiếu toàn bộ sinh viên trong CSDL.";
-                classNotice.className = "text-muted mt-1";
+                classNotice.className = "text-muted mt-2 d-block";
                 alert("Đã hủy danh sách giới hạn. Chuyển sang quét toàn bộ Facebank.");
                 return;
             }
@@ -303,7 +1125,7 @@
             if (data.success) {
                 realtimeMssvList = data.mssv_list;
                 document.getElementById('classNotice').innerText = `✅ Đã nạp ${data.total} sinh viên từ file. Camera sẽ chỉ nhận diện các bạn này!`;
-                document.getElementById('classNotice').className = "text-success fw-bold mt-1";
+                document.getElementById('classNotice').className = "text-success fw-bold mt-2 d-block";
             } else {
                 alert("Lỗi nạp file: " + data.error);
             }
@@ -319,7 +1141,7 @@
             document.getElementById('realtimeExcelInput').value = ""; // Xóa tên file đã chọn
             const classNotice = document.getElementById('classNotice');
             classNotice.innerText = "Chưa nạp file danh sách: Hệ thống sẽ quét đối chiếu toàn bộ sinh viên trong CSDL.";
-            classNotice.className = "text-muted mt-1";
+            classNotice.className = "text-muted mt-2 d-block";
             
             renderGallery();
             
@@ -329,7 +1151,7 @@
             document.getElementById('countAbsent').innerText = "(0 SV)";
             document.getElementById('statUnregistered').innerText = "0%";
             document.getElementById('countUnregistered').innerText = "(0 SV)";
-            document.getElementById('mediaContainer').innerHTML = `<div class="text-muted small">Chưa có ảnh toàn cảnh. Khi tải ảnh hoặc khi camera realtime bắt được nhiều người cùng lúc, snapshot toàn cảnh sẽ lưu tại đây.</div>`;
+            document.getElementById('mediaContainer').innerHTML = `<div class="text-muted small p-3">Chưa có ảnh toàn cảnh. Khi tải ảnh hoặc khi camera realtime bắt được nhiều người cùng lúc, snapshot toàn cảnh sẽ lưu tại đây.</div>`;
             
             // Xóa trí nhớ Tracker trên Server và XÓA FILE CACHE
             await fetch('/api/reset_realtime', { method: 'POST' });
@@ -469,7 +1291,7 @@
                 alert("Lỗi mạng: " + err.message);
                 logText.innerHTML = `<span class="text-danger">❌ Lỗi mạng: ${err.message}</span>`;
             } finally {
-                btnText.innerText = "🚀 Kích Hoạt Phân Tích";
+                btnText.innerText = "Kích Hoạt Phân Tích";
                 spinner.classList.add('d-none');
                 btn.disabled = false;
                 setTimeout(() => { progressContainer.classList.add('d-none'); }, 5000);
@@ -520,7 +1342,7 @@
             } catch (e) {
                 alert("Lỗi mạng.");
             } finally {
-                btn.innerText = "📥 Xuất File Excel Điểm Danh Realtime";
+                btn.innerText = "Xuất File Excel Điểm Danh Realtime";
                 btn.disabled = false;
             }
         }
@@ -541,6 +1363,10 @@
                 const track = liveStream.getVideoTracks()[0];
                 const isFront = track.getSettings().facingMode === 'user';
                 videoEl.style.transform = isFront ? 'scaleX(-1)' : 'scaleX(1)';
+                
+                // Tự động hiển thị khung căn chỉnh khuôn mặt mờ khi camera hoạt động
+                const guide = document.getElementById('realtimeFaceGuide');
+                if (guide) guide.classList.remove('d-none');
             } catch (err) {
                 alert("Không thể bật camera.");
             }
@@ -551,6 +1377,9 @@
                 liveStream.getTracks().forEach(t => t.stop());
                 liveStream = null;
             }
+            // Ẩn khung căn chỉnh khuôn mặt khi tắt camera
+            const guide = document.getElementById('realtimeFaceGuide');
+            if (guide) guide.classList.add('d-none');
         }
 
         function switchCamera() {
@@ -576,7 +1405,7 @@
             } catch (e) {
                 console.error(e);
                 alert("Không tải được MediaPipe Face Detector (kiểm tra kết nối Internet tới cdn.jsdelivr.net và storage.googleapis.com).");
-                startBtn.innerText = "▶️ Bắt Đầu Quét Real-Time";
+                startBtn.innerText = "Bắt Đầu Quét Real-Time";
                 startBtn.disabled = false;
                 return;
             }
@@ -587,12 +1416,12 @@
             if (!document.getElementById('realtimeExcelInput').value) {
                 realtimeMssvList = [];
                 document.getElementById('classNotice').innerText = "Chưa nạp file danh sách: Hệ thống sẽ quét đối chiếu toàn bộ sinh viên trong CSDL.";
-                document.getElementById('classNotice').className = "text-muted mt-1";
+                document.getElementById('classNotice').className = "text-muted mt-2 d-block";
             }
             
             isRealtimeRunning = true;
             document.getElementById('startLiveBtn').innerText = "⏹️ Dừng Quét Real-Time";
-            document.getElementById('startLiveBtn').className = "btn btn-danger fw-bold";
+            document.getElementById('startLiveBtn').className = "btn btn-danger btn-realtime-start";
             document.getElementById('realtimeNotice').classList.remove('d-none');
             
             document.getElementById('resultArea').classList.remove('d-none');
@@ -607,8 +1436,8 @@
         async function stopRealtime() {
             isRealtimeRunning = false;
             if (realtimeTimer) { clearTimeout(realtimeTimer); realtimeTimer = null; }
-            document.getElementById('startLiveBtn').innerText = "▶️ Bắt Đầu Quét Real-Time";
-            document.getElementById('startLiveBtn').className = "btn btn-success fw-bold";
+            document.getElementById('startLiveBtn').innerText = "Bắt Đầu Quét Real-Time";
+            document.getElementById('startLiveBtn').className = "btn btn-success btn-realtime-start";
             frameBuffer = [];
             await fetch('/api/reset_realtime', { method: 'POST' });
         }
@@ -619,6 +1448,13 @@
             toast.innerText = `✅ Điểm danh: ${mssv} - ${name}`;
             toast.style.opacity = '1';
             toast.style.backgroundColor = 'rgba(25, 135, 84, 0.95)';
+            
+            // Lóe sáng xanh viền silhouette báo hiệu nhận diện thành công
+            const guide = document.getElementById('realtimeFaceGuide');
+            if (guide) {
+                guide.classList.add('scan-success');
+                setTimeout(() => guide.classList.remove('scan-success'), 1200);
+            }
             
             if (toastTimeout) clearTimeout(toastTimeout);
             toastTimeout = setTimeout(() => {
@@ -638,7 +1474,7 @@
             }, 1500); 
         }
 
-        const BATCH_SIZE = 10;
+        const BATCH_SIZE = 12;
         const CAPTURE_INTERVAL_MS = Math.round(1000 / BATCH_SIZE);   // 50ms/khung, giữ nguyên như cũ
         const RT_CAPTURE_MAX_SIDE = 1920;   // cạnh dài tối đa của frame gốc (giữ nguyên như cũ); crop mặt lấy từ frame này
         const FACE_SIZE = 160;              // đầu vào InceptionResnetV1 hiện tại: Resize((160,160)) -> backend không resize lại
@@ -935,5 +1771,27 @@
             }
         }
     </script>
+
+    <!-- Tự động đồng bộ lưới hiển thị Desktop Split Screen khi có kết quả -->
+    <script>
+    (function initTeacherGridLayout() {
+        const grid = document.getElementById('teacherDashboardGrid');
+        const res = document.getElementById('resultArea');
+        if (!grid || !res) return;
+
+        function syncGridClass() {
+            if (!res.classList.contains('d-none')) {
+                grid.classList.add('has-active-results');
+            } else {
+                grid.classList.remove('has-active-results');
+            }
+        }
+
+        const observer = new MutationObserver(syncGridClass);
+        observer.observe(res, { attributes: true, attributeFilter: ['class'] });
+        syncGridClass();
+    })();
+    </script>
+
 </body>
 </html>

@@ -2,127 +2,852 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng ký khuôn mặt eKYC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Hệ Thống eKYC Sinh Viên - Điểm Danh AI</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style> 
-        body { background-color: #f0f2f5; } 
-        .camera-wrapper { width: 260px; height: 260px; margin: 0 auto; border-radius: 50%; border: 6px solid #e9ecef; overflow: hidden; position: relative; box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
-        .camera-wrapper.active { border-color: #0d6efd; box-shadow: 0 0 20px rgba(13, 110, 253, 0.5); }
-        #webcam { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); } 
-        
-        .gallery-container { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 15px;}
-        .gallery-item { width: 75px; height: 75px; object-fit: cover; border-radius: 8px; border: 2px solid #dee2e6; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        #instructionText { font-size: 1.2rem; font-weight: bold; transition: all 0.3s ease; }
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --primary-light: #eff6ff;
+            --secondary-bg: #f8fafc;
+            --card-border: #e2e8f0;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #eff6ff 100%);
+            color: var(--text-main);
+            min-height: 100vh;
+            margin: 0;
+            padding-bottom: max(40px, env(safe-area-inset-bottom));
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        /* Top Navigation Bar */
+        .app-navbar {
+            background: #ffffff;
+            border-bottom: 1px solid var(--card-border);
+            padding: max(12px, env(safe-area-inset-top)) 0 12px 0;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand-custom {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: var(--text-main);
+            text-decoration: none;
+        }
+
+        .brand-icon-sm {
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-size: 18px;
+            box-shadow: 0 4px 10px -2px rgba(37, 99, 235, 0.3);
+        }
+
+        .user-pill {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .avatar-circle {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #e0e7ff;
+            color: var(--primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+        }
+
+        .btn-logout {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #475569;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background: #fee2e2;
+            color: #b91c1c;
+            border-color: #fca5a5;
+        }
+
+        /* Container & Grid Layout */
+        .student-main-container {
+            max-width: 1200px;
+            margin: 24px auto 40px auto;
+            padding: 0 16px;
+        }
+
+        .student-desktop-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+
+        /* Split View trên Desktop (>= 992px) */
+        @media (min-width: 992px) {
+            .student-desktop-grid {
+                grid-template-columns: 460px 1fr;
+                gap: 28px;
+                align-items: start;
+            }
+        }
+
+        /* Profile Header */
+        .content-card {
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid rgba(226, 232, 240, 0.9);
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.05), 0 0 1px 1px rgba(0, 0, 0, 0.02);
+            overflow: hidden;
+        }
+
+        .student-profile-header {
+            padding: 20px 24px;
+            background: linear-gradient(to right, #f8fafc, #eff6ff);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .student-info-meta h4 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin: 0 0 4px 0;
+            color: var(--text-main);
+        }
+
+        .student-mssv-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.825rem;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        .status-badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.825rem;
+            font-weight: 600;
+        }
+
+        .status-badge-verified {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+
+        .status-badge-pending {
+            background: #fef3c7;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        /* Biometric Camera Viewport Tự Thích Ứng */
+        .camera-wrapper {
+            width: clamp(210px, 68vw, 270px);
+            height: clamp(210px, 68vw, 270px);
+            max-width: 82vw;
+            max-height: 82vw;
+            margin: 0 auto;
+            border-radius: 50%;
+            border: 5px solid #e2e8f0;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.12);
+            background: #0f172a;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .camera-wrapper.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.2), 0 16px 32px rgba(37, 99, 235, 0.25);
+        }
+
+        .camera-wrapper::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 50%;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        #webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            display: block;
+        }
+
+        /* Camera Flash Overlay khi chụp TÁCH! */
+        .camera-flash-overlay {
+            position: absolute;
+            inset: 0;
+            background: #ffffff;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 25;
+            border-radius: 50%;
+            transition: opacity 0.18s ease-out;
+        }
+
+        /* Khung mặt mờ eKYC hướng dẫn căn chỉnh */
+        .student-face-guide {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s ease;
+        }
+
+        .student-guide-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .student-silhouette-svg {
+            width: auto;
+            height: 72%;
+            max-height: 200px;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.45));
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .face-features-group {
+            transform-origin: 100px 115px;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .smile-mouth-path {
+            display: none;
+        }
+
+        /* 1. Nhìn thẳng trực diện */
+        .student-silhouette-svg.pose-front .face-features-group {
+            transform: translate(0, 0);
+        }
+
+        /* 2. Mỉm cười */
+        .student-silhouette-svg.pose-smile .mouth-path {
+            display: none;
+        }
+        .student-silhouette-svg.pose-smile .smile-mouth-path {
+            display: inline;
+        }
+
+        /* 3. Quay sang TRÁI (30 độ) */
+        .student-silhouette-svg.pose-left .face-features-group {
+            transform: translate(-14px, 0) scaleX(0.85);
+        }
+        .student-silhouette-svg.pose-left .head-oval {
+            transform-origin: 100px 115px;
+            transform: scaleX(0.94);
+        }
+
+        /* 4. Quay sang PHẢI (30 độ) */
+        .student-silhouette-svg.pose-right .face-features-group {
+            transform: translate(14px, 0) scaleX(0.85);
+        }
+        .student-silhouette-svg.pose-right .head-oval {
+            transform-origin: 100px 115px;
+            transform: scaleX(0.94);
+        }
+
+        /* 5. Hơi ngước cằm LÊN */
+        .student-silhouette-svg.pose-up .face-features-group {
+            transform: translate(0, -10px) scaleY(0.92);
+        }
+
+        /* 6. Hơi cúi cằm XUỐNG */
+        .student-silhouette-svg.pose-down .face-features-group {
+            transform: translate(0, 10px) scaleY(0.92);
+        }
+
+        /* Label góc chụp nhỏ phía dưới */
+        .student-pose-label {
+            position: absolute;
+            bottom: 22px;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(6px);
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 0.725rem;
+            font-weight: 600;
+            padding: 3px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+            letter-spacing: 0.02em;
+            transition: all 0.25s ease;
+        }
+
+        /* Badge phản hồi "ĐÃ CHỤP! ✓" */
+        .snap-success-badge {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.6);
+            background: rgba(16, 185, 129, 0.95);
+            backdrop-filter: blur(8px);
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 800;
+            padding: 8px 18px;
+            border-radius: 30px;
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5), 0 0 0 4px rgba(255, 255, 255, 0.4);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 30;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            letter-spacing: 0.03em;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .snap-success-badge.show-badge {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        /* Instruction & Stepper */
+        #instructionText {
+            font-size: 1.15rem;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            min-height: 28px;
+        }
+
+        /* Modern Progress Bar */
+        .progress-custom {
+            height: 10px;
+            background-color: #e2e8f0;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.06);
+        }
+
+        /* Checklist Indicator Chips */
+        .checklist-container {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .check-chip {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+        }
+
+        /* Gallery Grid */
+        .gallery-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .gallery-card {
+            background: #f8fafc;
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            overflow: hidden;
+            text-align: center;
+            padding: 6px;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+        }
+
+        .gallery-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -2px rgba(0,0,0,0.08);
+            border-color: #cbd5e1;
+        }
+
+        .gallery-item {
+            width: 100%;
+            height: 95px;
+            object-fit: cover;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .gallery-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-top: 6px;
+            display: block;
+        }
+
+        /* Guide Card */
+        .guide-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+        }
+
+        .guide-box-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .rules-list {
+            list-style: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        .rules-list li {
+            position: relative;
+            padding-left: 22px;
+            font-size: 0.85rem;
+            color: #334155;
+            margin-bottom: 8px;
+            line-height: 1.45;
+        }
+
+        .rules-list li:last-child {
+            margin-bottom: 0;
+        }
+
+        .rules-list li::before {
+            content: "•";
+            color: var(--primary);
+            font-size: 1.2rem;
+            position: absolute;
+            left: 8px;
+            top: -2px;
+        }
+
+        /* Action Buttons */
+        .btn-scan-primary {
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #ffffff;
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
+            transition: all 0.25s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-scan-primary:hover {
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 14px 24px -5px rgba(37, 99, 235, 0.5);
+        }
+
+        .btn-re-ekyc {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--primary);
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-re-ekyc:hover {
+            background: #dbeafe;
+            color: #1d4ed8;
+            border-color: #93c5fd;
+        }
+
+        /* Media Queries theo từng nhóm thiết bị */
+        @media (max-width: 991px) {
+            .student-desktop-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .gallery-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+            .student-profile-header {
+                flex-direction: column;
+                align-items: flex-start;
+                padding: 18px 16px;
+                gap: 12px;
+            }
+            .navbar-brand-custom span:last-child {
+                font-size: 1rem;
+            }
+            .brand-icon-sm {
+                width: 34px;
+                height: 34px;
+                font-size: 16px;
+            }
+            .btn-logout {
+                padding: 6px 10px;
+                font-size: 0.8rem;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .navbar-brand-custom span:last-child {
+                font-size: 0.9rem;
+            }
+            .check-chip {
+                padding: 4px 10px;
+                font-size: 0.725rem;
+            }
+            .student-pose-label {
+                bottom: 14px;
+                font-size: 0.675rem;
+                padding: 2px 8px;
+            }
+            .btn-scan-primary {
+                padding: 12px;
+                font-size: 0.9rem;
+            }
+            .gallery-item {
+                height: 80px;
+            }
+        }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-dark bg-primary text-white mb-4">
+    <!-- Navigation Bar -->
+    <header class="app-navbar">
         <div class="container d-flex justify-content-between align-items-center">
-            <span class="navbar-brand mb-0 h1">Hệ Thống eKYC Sinh Viên</span>
-            <form action="/logout" method="post" class="m-0">
-                <button type="submit" class="btn btn-sm btn-outline-light">Đăng Xuất</button>
-            </form>
-        </div>
-    </nav>
-
-    <div class="container" style="max-width: 500px;">
-        <div class="card p-4 shadow-sm mb-5 border-0">
-            <p class="text-center mb-3">Xin chào, <b class="text-primary">{{ name }}</b> ({{ mssv }})</p>
-
-            {% if is_registered %}
-                <div class="alert alert-success text-center">
-                    <h5 class="mb-1">✅ Đã định danh thành công</h5>
-                </div>
-
-                {% if registered_images %}
-            <div class="mb-4">
-                <h6 class="text-center text-muted">🖼️ Hồ sơ nhận diện (6 góc mặt):</h6>
-                <div class="gallery-container">
-                    {% for img_url in registered_images %}
-                        <img src="{{ img_url }}" class="gallery-item" alt="Face Angle">
-                    {% endfor %}
-                </div>
-                
-                <!-- BẮT ĐẦU: Khung luật quét Realtime -->
-                <div class="alert alert-warning mt-4 text-start shadow-sm border-0 mx-auto" style="font-size: 0.9rem; max-width: 450px;">
-                    <h6 class="fw-bold text-danger mb-2">⚠️ Luật Khi Quét Realtime Điểm Danh Sinh Viên:</h6>
-                    <ul class="mb-0 text-dark ps-3">
-                        <li class="mb-1">Sinh viên phải bỏ khẩu trang, kính mắt ra và nghiêm túc di chuyển.</li>
-                        <li class="mb-1">Đưa mặt mình vào camera sao cho rõ, không bị mờ nét và đứng yên chờ xác nhận.</li>
-                        <li class="mb-1">Khi đã hiện tên của mình màu xanh lá thì bắt đầu di chuyển qua cho bạn khác vào.</li>
-                        <li>Nếu không hiện tên và hiện chữ "unknown" thì hãy đi ra và làm lại. Nếu hiện tên bạn khác thì báo cáo ngay với thầy cô.</li>
-                    </ul>
-                </div>
-                <!-- KẾT THÚC: Khung luật quét Realtime -->
-                
-            </div>
-            {% endif %}
-
-                <div class="text-center mb-4 border-top pt-3">
-                    <button class="btn btn-outline-primary" onclick="toggleCameraForm()">
-                        🔄 Cập nhật lại khuôn mặt
-                    </button>
-                </div>
-            {% endif %}
-
-            <div id="alertBox" class="alert d-none text-center"></div>
-
-            <div id="kyc-form-area" class="{% if is_registered %}d-none{% endif %}">
-                <!-- BẢNG HƯỚNG DẪN CHỤP -->
-                <div class="alert alert-info py-2 mb-4 text-start rounded-3 shadow-sm border-0" style="font-size: 0.9rem;">
-                    <h6 class="fw-bold mb-2 text-center text-primary">📌 HƯỚNG DẪN ĐỊNH DANH 6 GÓC</h6>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <ul class="mb-0 ps-3 text-dark">
-                                <li>① Nhìn thẳng</li>
-                                <li>② Mỉm cười</li>
-                                <li>③ Quay Trái</li>
-                            </ul>
-                        </div>
-                        <div class="col-6">
-                            <ul class="mb-0 ps-3 text-dark">
-                                <li>④ Quay Phải</li>
-                                <li>⑤ Ngước Lên</li>
-                                <li>⑥ Cúi Xuống</li>
-                            </ul>
-                        </div>
+            <a href="/student" class="navbar-brand-custom">
+                <span class="brand-icon-sm">
+                    <i class="bi bi-person-bounding-box"></i>
+                </span>
+                <span>Hệ Thống eKYC Sinh Viên</span>
+            </a>
+            
+            <div class="user-pill">
+                <div class="d-none d-sm-flex align-items-center gap-2">
+                    <div class="avatar-circle">
+                        {{ name[0] if name else 'S' }}
                     </div>
-                    <hr class="my-2 border-primary opacity-25">
-                    <div class="d-flex justify-content-between px-2 fw-bold" style="font-size: 0.85rem;">
-                        <span id="checkLight" class="text-success">✓ Đủ sáng</span>
-                        <span id="checkFace" class="text-success">✓ Rõ mặt</span>
-                        <span id="checkSingle" class="text-success">✓ 1 Người</span>
-                    </div>
-                </div>
-                <!-- KẾT THÚC BẢNG HƯỚNG DẪN -->
-
-                <div class="camera-wrapper mb-3" id="camWrapper">
-                    <video id="webcam" autoplay playsinline muted></video>
-                </div>
-                
-                <div class="text-center mb-4">
-                    <div id="instructionText" class="text-primary mb-2">Hãy để khuôn mặt vào giữa vòng tròn</div>
-                    <div class="progress" style="height: 8px;">
-                        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
+                    <div class="text-end" style="line-height: 1.2;">
+                        <div class="fw-bold text-dark" style="font-size: 0.85rem;">{{ name }}</div>
+                        <small class="text-muted" style="font-size: 0.75rem;">MSSV: {{ mssv }}</small>
                     </div>
                 </div>
 
-                <form id="ekycForm">
-                    <input type="hidden" name="mssv" value="{{ mssv }}">
-                    <input type="hidden" name="name" value="{{ name }}">
-                    
-                    <button type="button" id="startBtn" class="btn btn-primary w-100 py-3 fw-bold rounded-pill">
-                        📸 Bắt Đầu Quét Khuôn Mặt
-                    </button>
-                    
-                    <button type="button" id="uploadingBtn" class="btn btn-secondary w-100 py-3 fw-bold rounded-pill d-none" disabled>
-                        <span class="spinner-border spinner-border-sm" role="status"></span> AI Đang Đồng Bộ Dữ Liệu...
+                <form action="/logout" method="post" class="m-0">
+                    <button type="submit" class="btn-logout" title="Đăng xuất khỏi hệ thống">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Đăng Xuất</span>
                     </button>
                 </form>
             </div>
         </div>
-    </div>
+    </header>
+
+    <main class="container student-main-container">
+        <!-- Student Header Profile Banner -->
+        <div class="content-card shadow-sm mb-4">
+            <div class="student-profile-header">
+                <div class="student-info-meta">
+                    <h4>{{ name }}</h4>
+                    <span class="student-mssv-badge">
+                        <i class="bi bi-hash"></i> MSSV: {{ mssv }}
+                    </span>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    {% if is_registered %}
+                    <span class="status-badge-pill status-badge-verified">
+                        <i class="bi bi-patch-check-fill"></i> Đã Định Danh eKYC
+                    </span>
+                    <button class="btn btn-sm btn-outline-primary fw-semibold" onclick="toggleCameraForm()">
+                        <i class="bi bi-arrow-repeat"></i> Cập nhật khuôn mặt
+                    </button>
+                    {% else %}
+                    <span class="status-badge-pill status-badge-pending">
+                        <i class="bi bi-clock-history"></i> Chưa Định Danh
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Thông Báo Lỗi / Thành Công -->
+        <div id="alertBox" class="alert d-none text-center rounded-3 mb-4 shadow-sm border-0"></div>
+
+        <!-- BỐ CỤC THAY ĐỔI RÕ RỆT: Split Grid 2 Cột trên Desktop, 1 Cột trên Mobile -->
+        <div class="student-desktop-grid">
+            <!-- CỘT 1: VÙNG CAMERA QUÉT eKYC -->
+            <div class="camera-panel-card">
+                <div class="p-4 bg-white rounded-4 border shadow-sm">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0 d-flex align-items-center gap-2">
+                            <i class="bi bi-camera-video-fill text-primary"></i> Quét Định Danh Khuôn Mặt
+                        </h5>
+                        {% if is_registered %}
+                        <span class="badge bg-light text-muted border">Chế độ cập nhật</span>
+                        {% else %}
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Bắt buộc</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Khu vực Webcam Quét 6 góc eKYC -->
+                    <div id="kyc-form-area" class="{% if is_registered %}d-none{% endif %}">
+                        <!-- Khung tròn hiển thị Camera -->
+                        <div class="camera-wrapper mb-3" id="camWrapper">
+                            <video id="webcam" autoplay playsinline muted></video>
+
+                            <!-- Lớp phủ Flash trắng khi chụp TÁCH! -->
+                            <div id="cameraFlashOverlay" class="camera-flash-overlay"></div>
+
+                            <!-- Lớp phủ căn chỉnh khuôn mặt eKYC theo góc chụp -->
+                            <div id="studentFaceGuide" class="student-face-guide">
+                                <div class="student-guide-content">
+                                    <svg id="studentSilhouetteSvg" class="student-silhouette-svg pose-front" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <!-- Khung Oval định vị đầu -->
+                                        <ellipse class="head-oval" cx="100" cy="115" rx="60" ry="78" stroke="rgba(255, 255, 255, 0.45)" stroke-width="2.5" stroke-dasharray="6 4" />
+                                        
+                                        <!-- Nhóm ngũ quan (mắt, mũi, miệng) phản hồi theo góc quay -->
+                                        <g id="studentFaceFeatures" class="face-features-group">
+                                            <!-- Mắt -->
+                                            <ellipse class="eye-left" cx="78" cy="102" rx="9" ry="5" stroke="rgba(255, 255, 255, 0.45)" stroke-width="2" />
+                                            <ellipse class="eye-right" cx="122" cy="102" rx="9" ry="5" stroke="rgba(255, 255, 255, 0.45)" stroke-width="2" />
+                                            
+                                            <!-- Sống mũi -->
+                                            <path class="nose-path" d="M100 98 V120 L95 126 H103" stroke="rgba(255, 255, 255, 0.45)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                            
+                                            <!-- Khuôn miệng chuẩn -->
+                                            <path class="mouth-path" d="M84 148 Q100 156 116 148" stroke="rgba(255, 255, 255, 0.45)" stroke-width="2" stroke-linecap="round" />
+                                            
+                                            <!-- Khuôn miệng cười tươi (chỉ hiện khi bước cười) -->
+                                            <path class="smile-mouth-path" d="M80 145 Q100 165 120 145 Q100 156 80 145" stroke="rgba(255, 255, 255, 0.55)" fill="rgba(255, 255, 255, 0.15)" stroke-width="2" stroke-linecap="round" />
+                                        </g>
+                                        
+                                        <!-- Định vị trán & cằm -->
+                                        <path d="M88 45 Q100 42 112 45" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
+                                        <path d="M88 185 Q100 190 112 185" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
+                                    </svg>
+                                    
+                                    <!-- Hướng dẫn phụ góc chụp nhỏ -->
+                                    <span id="studentPoseLabel" class="student-pose-label">
+                                        <i class="bi bi-arrows-fullscreen"></i> Căn giữa khuôn mặt
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Badge "ĐÃ CHỤP! ✓" xuất hiện khi nổ Flash -->
+                            <div id="snapSuccessBadge" class="snap-success-badge">
+                                <i class="bi bi-camera-fill me-1"></i> ĐÃ CHỤP!
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mb-4">
+                            <div id="instructionText" class="text-primary mb-2">Hãy để khuôn mặt vào giữa vòng tròn</div>
+                            <div class="progress progress-custom">
+                                <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <form id="ekycForm">
+                            <input type="hidden" name="mssv" value="{{ mssv }}">
+                            <input type="hidden" name="name" value="{{ name }}">
+                            
+                            <button type="button" id="startBtn" class="btn-scan-primary">
+                                <i class="bi bi-camera"></i>
+                                <span>Bắt Đầu Quét Khuôn Mặt</span>
+                            </button>
+                            
+                            <button type="button" id="uploadingBtn" class="btn btn-secondary w-100 py-3 fw-bold rounded-3 d-none" disabled>
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                <span>AI Đang Đồng Bộ Dữ Liệu Khuôn Mặt...</span>
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Trạng thái khi sinh viên đã đăng ký và form đang thu gọn -->
+                    {% if is_registered %}
+                    <div id="registeredNoticeBox" class="text-center py-4">
+                        <div class="mb-3">
+                            <i class="bi bi-patch-check-fill text-success" style="font-size: 3.2rem;"></i>
+                        </div>
+                        <h5 class="fw-bold text-dark">Hồ sơ định danh eKYC đã sẵn sàng</h5>
+                        <p class="text-muted small mb-3">Bạn đã hoàn thành chụp 6 góc khuôn mặt. Bạn có thể sử dụng camera lớp học để điểm danh tự động.</p>
+                        <button class="btn btn-outline-primary px-4 py-2 rounded-pill fw-semibold" onclick="toggleCameraForm()">
+                            <i class="bi bi-camera-video me-1"></i> Mở Camera Quét Lại
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- CỘT 2: HƯỚNG DẪN 6 GÓC & HỒ SƠ ẢNH ĐÃ ĐĂNG KÝ -->
+            <div class="info-panel-card">
+                <!-- BẢNG HƯỚNG DẪN CHỤP 6 GÓC -->
+                <div class="guide-box mb-4 shadow-sm">
+                    <div class="guide-box-title">
+                        <i class="bi bi-card-checklist"></i> HƯỚNG DẪN ĐỊNH DANH 6 GÓC KHUÔN MẶT
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-6 col-12">
+                            <div class="p-3 bg-light rounded-3 border small h-100">
+                                <div class="fw-bold text-primary mb-1">Bước 1 - 3:</div>
+                                <div class="mb-1">① Nhìn thẳng trực diện</div>
+                                <div class="mb-1">② Mỉm cười tự nhiên</div>
+                                <div>③ Nghiêng nhẹ sang Trái (30°)</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6 col-12">
+                            <div class="p-3 bg-light rounded-3 border small h-100">
+                                <div class="fw-bold text-primary mb-1">Bước 4 - 6:</div>
+                                <div class="mb-1">④ Nghiêng nhẹ sang Phải (30°)</div>
+                                <div class="mb-1">⑤ Hơi ngước cằm Lên</div>
+                                <div>⑥ Hơi cúi cằm Xuống</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3 Tiêu chí kiểm tra điều kiện (Ánh sáng - Rõ mặt - 1 Người) -->
+                    <div class="checklist-container">
+                        <span id="checkLight" class="check-chip text-success">
+                            <i class="bi bi-check-circle-fill"></i> Đủ sáng
+                        </span>
+                        <span id="checkFace" class="check-chip text-success">
+                            <i class="bi bi-check-circle-fill"></i> Rõ mặt
+                        </span>
+                        <span id="checkSingle" class="check-chip text-success">
+                            <i class="bi bi-check-circle-fill"></i> 1 Người
+                        </span>
+                    </div>
+                </div>
+
+                {% if is_registered and registered_images %}
+                <!-- Hồ sơ nhận diện (6 ảnh mẫu) -->
+                <div class="p-4 bg-white rounded-4 border shadow-sm mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-images text-primary me-1"></i> Hồ sơ nhận diện đã lưu (6 góc):
+                        </h6>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle">Đã lưu trữ</span>
+                    </div>
+
+                    <div class="gallery-container">
+                        {% for img_url in registered_images %}
+                        <div class="gallery-card">
+                            <img src="{{ img_url }}" class="gallery-item" alt="Face Angle {{ loop.index }}">
+                            <span class="gallery-label">Góc mặt #{{ loop.index }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Khung luật quét Realtime Điểm Danh Sinh Viên -->
+                <div class="alert alert-warning p-3 border-0 rounded-3 shadow-sm" style="font-size: 0.875rem; background-color: #fffbeb; border-left: 4px solid #f59e0b !important;">
+                    <h6 class="fw-bold text-danger mb-2 d-flex align-items-center gap-2">
+                        <i class="bi bi-exclamation-octagon-fill"></i> QUY ĐỊNH KHI QUÉT REALTIME ĐIỂM DANH:
+                    </h6>
+                    <ul class="rules-list text-dark">
+                        <li>Sinh viên phải bỏ khẩu trang, kính râm và di chuyển tuần tự trước camera.</li>
+                        <li>Đưa mặt vào giữa góc nhìn camera rõ nét, không bị rung lắc và đứng yên 1-2 giây.</li>
+                        <li>Khi màn hình hiện tên MSSV màu xanh lá, tức là bạn đã được ghi nhận có mặt thành công.</li>
+                        <li>Nếu xuất hiện <b>"Unknown"</b>, hãy bước ra khỏi camera và thử lại. Nếu hiện nhầm tên người khác, cần báo ngay với giảng viên.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <!-- Canvas ẩn để lấy ảnh từ Video -->
     <canvas id="canvas" class="d-none"></canvas>
@@ -157,6 +882,7 @@
                 .then(stream => { 
                     videoElement.srcObject = stream; 
                     videoStream = stream; 
+                    updateFaceGuidePose(0);
                 })
                 .catch(err => { 
                     showAlert("Hãy cho phép dùng Camera để định danh!", "danger"); 
@@ -174,6 +900,8 @@
 
         function toggleCameraForm() {
             kycFormArea.classList.toggle('d-none');
+            const noticeBox = document.getElementById('registeredNoticeBox');
+            if (noticeBox) noticeBox.classList.toggle('d-none');
             if (!kycFormArea.classList.contains('d-none')) {
                 startCamera(); 
             } else {
@@ -185,6 +913,59 @@
             startCamera();
         }
 
+        // Hàm cập nhật trạng thái hướng silhouette theo đúng góc chụp của từng bước
+        function updateFaceGuidePose(stepIndex) {
+            const svg = document.getElementById('studentSilhouetteSvg');
+            const label = document.getElementById('studentPoseLabel');
+            const guide = document.getElementById('studentFaceGuide');
+            if (guide) guide.classList.remove('d-none');
+            if (!svg) return;
+
+            svg.classList.remove('pose-front', 'pose-smile', 'pose-left', 'pose-right', 'pose-up', 'pose-down');
+            
+            if (stepIndex === 0) {
+                svg.classList.add('pose-front');
+                if (label) label.innerHTML = '<i class="bi bi-person-fill"></i> 1/6: Nhìn thẳng trực diện';
+            } else if (stepIndex === 1) {
+                svg.classList.add('pose-smile');
+                if (label) label.innerHTML = '<i class="bi bi-emoji-smile-fill"></i> 2/6: Mỉm cười thật tươi';
+            } else if (stepIndex === 2) {
+                svg.classList.add('pose-left');
+                if (label) label.innerHTML = '<i class="bi bi-arrow-left-circle-fill"></i> 3/6: Quay sang TRÁI (30°)';
+            } else if (stepIndex === 3) {
+                svg.classList.add('pose-right');
+                if (label) label.innerHTML = '<i class="bi bi-arrow-right-circle-fill"></i> 4/6: Quay sang PHẢI (30°)';
+            } else if (stepIndex === 4) {
+                svg.classList.add('pose-up');
+                if (label) label.innerHTML = '<i class="bi bi-arrow-up-circle-fill"></i> 5/6: Hơi ngước cằm LÊN';
+            } else if (stepIndex === 5) {
+                svg.classList.add('pose-down');
+                if (label) label.innerHTML = '<i class="bi bi-arrow-down-circle-fill"></i> 6/6: Hơi cúi cằm XUỐNG';
+            }
+        }
+
+        // Kích hoạt hiệu ứng chớp sáng trắng (Flash) và thông báo "ĐÃ CHỤP! ✓"
+        async function triggerCaptureEffect() {
+            const flash = document.getElementById('cameraFlashOverlay');
+            const snapBadge = document.getElementById('snapSuccessBadge');
+            
+            // 1. Chớp Flash trắng nhẹ (khoảng 180ms)
+            if (flash) {
+                flash.style.transition = 'none';
+                flash.style.opacity = '0.85';
+                await new Promise(r => setTimeout(r, 40));
+                flash.style.transition = 'opacity 0.18s ease-out';
+                flash.style.opacity = '0';
+            }
+
+            // 2. Phóng nhẹ badge thông báo "ĐÃ CHỤP!" trong thời gian ngắn
+            if (snapBadge) {
+                snapBadge.classList.add('show-badge');
+                await new Promise(r => setTimeout(r, 260));
+                snapBadge.classList.remove('show-badge');
+            }
+        }
+
         startBtn.addEventListener('click', async () => {
             startBtn.classList.add('d-none');
             camWrapper.classList.add('active');
@@ -194,6 +975,9 @@
             canvas.height = videoElement.videoHeight || 640;
 
             for (let i = 0; i < steps.length; i++) {
+                // Cập nhật hình minh họa hướng mặt cho bước i
+                updateFaceGuidePose(i);
+
                 instructionText.innerText = steps[i];
                 instructionText.className = "text-danger mb-2"; 
                 
@@ -214,16 +998,22 @@
                 let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
                 capturedBlobs.push(blob);
                 
-                camWrapper.style.borderColor = "#198754";
+                // Đồng bộ hiệu ứng Flash TÁCH! ngay khi ảnh được tạo thành công
+                await triggerCaptureEffect();
+
+                camWrapper.style.borderColor = "#10b981";
                 instructionText.className = "text-success mb-2";
                 await new Promise(r => setTimeout(r, 300));
-                camWrapper.style.borderColor = "#0d6efd";
+                camWrapper.style.borderColor = "#2563eb";
             }
 
             instructionText.innerText = "Hoàn tất! Đang xử lý...";
             camWrapper.classList.remove('active');
             uploadingBtn.classList.remove('d-none');
             
+            const guide = document.getElementById('studentFaceGuide');
+            if (guide) guide.classList.add('d-none');
+
             stopCamera();
             sendToBackend();
         });
@@ -253,24 +1043,24 @@
                     
                     // Reset checklist về mặc định (Xanh lá)
                     document.getElementById('checkLight').innerHTML = "✓ Đủ sáng";
-                    document.getElementById('checkLight').className = "text-success";
+                    document.getElementById('checkLight').className = "check-chip text-success";
                     document.getElementById('checkFace').innerHTML = "✓ Rõ mặt";
-                    document.getElementById('checkFace').className = "text-success";
+                    document.getElementById('checkFace').className = "check-chip text-success";
                     document.getElementById('checkSingle').innerHTML = "✓ 1 Người";
-                    document.getElementById('checkSingle').className = "text-success";
+                    document.getElementById('checkSingle').className = "check-chip text-success";
 
                     // Phân tích câu chữ của AI để đánh dấu Đỏ (Làm động UI)
                     if (msg.includes("tối") || msg.includes("chói") || msg.includes("sáng")) {
                         document.getElementById('checkLight').innerHTML = "❌ Lỗi ánh sáng";
-                        document.getElementById('checkLight').className = "text-danger";
+                        document.getElementById('checkLight').className = "check-chip text-danger";
                     }
                     if (msg.includes("nhỏ") || msg.includes("xa") || msg.includes("Không tìm thấy") || msg.includes("sâu")) {
                         document.getElementById('checkFace').innerHTML = "❌ Không rõ mặt";
-                        document.getElementById('checkFace').className = "text-danger";
+                        document.getElementById('checkFace').className = "check-chip text-danger";
                     }
                     if (msg.includes("nhiều hơn 1")) {
                         document.getElementById('checkSingle').innerHTML = "❌ Nhiều người";
-                        document.getElementById('checkSingle').className = "text-danger";
+                        document.getElementById('checkSingle').className = "check-chip text-danger";
                     }
 
                     resetUI(); 
@@ -285,13 +1075,15 @@
             uploadingBtn.classList.add('d-none');
             startBtn.classList.remove('d-none');
             instructionText.innerText = "Hãy để khuôn mặt vào giữa vòng tròn";
+            instructionText.className = "text-primary mb-2";
             progressBar.style.width = '0%';
+            updateFaceGuidePose(0);
             startCamera(); 
         }
 
         function showAlert(msg, type) { 
             alertBox.innerText = msg; 
-            alertBox.className = `alert alert-${type} text-center mb-3`; 
+            alertBox.className = `alert alert-${type} text-center mb-4 shadow-sm border-0`; 
             alertBox.classList.remove('d-none'); 
         }
     </script>
