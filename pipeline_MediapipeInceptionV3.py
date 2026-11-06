@@ -1304,19 +1304,23 @@ def _run_realtime_batch(frames_bgr, class_mssv_list):
             })
             trk["has_sent_image"] = True
 
-    # ---- Snapshot toàn cảnh từ khung cuối (chỉ khi >= 2 mặt) ----
+    # ---- Snapshot toàn cảnh từ khung cuối (khi có track được xác nhận qua Temporal Voting) ----
     snapshot_b64 = None
-    if len(last_tracked) >= 2:
+    if detected_faces:
         snap = small_bgr_list[-1].copy()      # vẽ trên ảnh thu nhỏ: cùng hệ tọa độ với box, kích thước phản hồi như cũ
         h, w = snap.shape[:2]
         for tid, box in last_tracked:
             conf = tracker.tracks.get(tid, {}).get("confirmed_mssv")
             if conf is None:
-                color, label = (0, 255, 255), f"ID:{tid} | Dang xac nhan..."
+                color, label = (0, 255, 255), f"ID:{tid} | Đang xác nhận..."
             elif conf == "Unknown":
                 color, label = (0, 0, 255), f"ID:{tid} | Unknown"
             else:
-                color, label = (0, 255, 0), f"ID:{tid} | {conf.split(' - ')[0]} \u2713"
+                parts = conf.split(" - ", 1)
+                st_m = parts[0]
+                st_n = parts[1] if len(parts) > 1 else ""
+                label = f"ID:{tid} | {st_m} - {st_n}" if st_n else f"ID:{tid} | {st_m} \u2713"
+                color = (0, 255, 0)
             x1, y1, x2, y2 = clamp_box(*box, w, h)
             cv2.rectangle(snap, (x1, y1), (x2, y2), color, 2)
             cv2.putText(snap, label, (x1, max(20, y1 - 6)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
@@ -1439,28 +1443,54 @@ def _run_realtime_faces_batch(frames_meta, crops_rgb, crops_raw, class_mssv_list
             # Ảnh hiển thị = chính crop 160x160 frontend gửi lên (không còn frame gốc ở backend để cắt có pad)
             crop_b64 = "data:image/jpeg;base64," + base64.b64encode(raw).decode('utf-8') if raw else ""
 
+            # Lấy toạ độ box của track này để gắn vào detected_faces
+            rx1, ry1, rx2, ry2 = clamp_box(*trk["bbox"], last_wh[0], last_wh[1]) if last_wh[0] > 0 else (0, 0, 0, 0)
             detected_faces.append({
                 "type": ftype, "mssv": st_mssv, "name": st_name,
                 "score": round(sim * 100, 1), "crop_url": crop_b64,
-                "time": curr_time, "track_id": tid, "frame_seq": seq
+                "time": curr_time, "track_id": tid, "frame_seq": seq,
+                "box": [rx1, ry1, rx2, ry2]
             })
             trk["has_sent_image"] = True
 
-    # ---- Snapshot: backend chỉ trả box/nhãn/màu của khung cuối (>= 2 mặt); frontend vẽ lên khung của nó ----
+    # ---- Snapshot: backend chỉ phát sinh thông tin khi có Track ID được xác nhận qua Temporal Voting ----
+    # Bỏ hoàn toàn điều kiện ">= 2 mặt"; mỗi Track ID khi xác nhận sẽ có thông tin snapshot toàn cảnh
     snapshot_tracks = None
-    if len(last_tracked) >= 2:
+    if detected_faces:
         w, h = last_wh
         snapshot_tracks = []
         for tid, box in last_tracked:
             conf = tracker.tracks.get(tid, {}).get("confirmed_mssv")
             if conf is None:
-                state, label = "pending", f"ID:{tid} | Dang xac nhan..."
+                state, label = "pending", f"ID:{tid} | Đang xác nhận..."
             elif conf == "Unknown":
                 state, label = "unknown", f"ID:{tid} | Unknown"
             else:
-                state, label = "known", f"ID:{tid} | {conf.split(' - ')[0]} ✓"
+                parts = conf.split(" - ", 1)
+                st_m = parts[0]
+                st_n = parts[1] if len(parts) > 1 else ""
+                label = f"ID:{tid} | {st_m} - {st_n}" if st_n else f"ID:{tid} | {st_m} ✓"
+                state = "known"
             x1, y1, x2, y2 = clamp_box(*box, w, h)
             snapshot_tracks.append({"track_id": tid, "box": [x1, y1, x2, y2],
                                     "label": label, "color": _SNAP_STYLE[state]})
+
+        # Đảm bảo mọi track vừa được xác nhận đều có mặt trong snapshot_tracks
+        tracked_ids_in_snap = {st["track_id"] for st in snapshot_tracks}
+        for df in detected_faces:
+            df_tid = df["track_id"]
+            if df_tid not in tracked_ids_in_snap and df_tid in tracker.tracks:
+                conf = tracker.tracks[df_tid].get("confirmed_mssv")
+                if conf == "Unknown":
+                    state, label = "unknown", f"ID:{df_tid} | Unknown"
+                else:
+                    parts = (conf or "").split(" - ", 1)
+                    st_m = parts[0]
+                    st_n = parts[1] if len(parts) > 1 else ""
+                    label = f"ID:{df_tid} | {st_m} - {st_n}" if st_n else f"ID:{df_tid} | {st_m} ✓"
+                    state = "known"
+                x1, y1, x2, y2 = clamp_box(*tracker.tracks[df_tid]["bbox"], w, h)
+                snapshot_tracks.append({"track_id": df_tid, "box": [x1, y1, x2, y2],
+                                        "label": label, "color": _SNAP_STYLE[state]})
 
     return detected_faces, snapshot_tracks
