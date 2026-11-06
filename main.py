@@ -80,6 +80,7 @@ app.add_middleware(
         "/api/realtime_stream": 12 * 1024 * 1024,   # batch 10 frame độ phân giải cao (<= 1920px)
         "/api/diem_danh/upload_chunk": 6 * 1024 * 1024,      # chunk 5MB + phần form
         "/api/dang_ky_khuon_mat": 25 * 1024 * 1024,
+        "/api/ekyc/verify_reference": 2 * 1024 * 1024,
         "/api/upload_realtime_class_list": 6 * 1024 * 1024,
     },
     default=1 * 1024 * 1024,
@@ -667,8 +668,8 @@ def parse_realtime_meta(meta_str: str, n_crops: int):
                 if c in used:            # mỗi crop chỉ thuộc về 1 khuôn mặt
                     return None
                 used.add(c)
-            clean.append({"box": [x1, y1, x2, y2], "c": c})
-        out.append({"seq": seq, "w": w, "h": h, "faces": clean})
+            clean.append({"box": [x1, y1, x2, y2], "c": c, "alignment_ok": bool(f.get("alignment_ok", False))})
+        out.append({"seq": seq, "w": w, "h": h, "faces": clean, "alignment_ok": bool(fr.get("alignment_ok", False))})
     return out
 
 
@@ -839,3 +840,55 @@ async def do_register_face(
         for p in tmp_paths:
             if os.path.exists(p):
                 os.remove(p)
+
+
+@app.post("/api/ekyc/verify_reference")
+async def verify_ekyc_reference(
+    file: UploadFile = File(...),
+    step_index: int = Form(0),
+    ref_embedding_json: str = Form(""),
+    user: dict = Depends(current_user)
+):
+    try:
+        from pipeline_MediapipeInceptionV3 import SAME_PERSON_THRESHOLD, extract_embedding_from_crop
+        content = await file.read(MAX_RT_CROP_BYTES + 1)
+        if not content or len(content) > MAX_RT_CROP_BYTES:
+            return JSONResponse({"success": False, "message": "Ảnh crop quá lớn hoặc không hợp lệ."}, status_code=400)
+        crop_rgb = decode_face_crop(content)
+        if crop_rgb is None:
+            return JSONResponse({"success": False, "message": "Không thể giải mã ảnh crop 160x160."}, status_code=400)
+
+        loop = asyncio.get_running_loop()
+        vec = await loop.run_in_executor(ai_pool, extract_embedding_from_crop, crop_rgb)
+        if vec is None:
+            return {"success": False, "message": "Không thể trích xuất vector khuôn mặt."}
+
+        if step_index == 0:
+            return {"success": True, "embedding": vec.tolist()}
+
+        # Với các bước tiếp theo (step_index > 0): so khớp cosine similarity với vector tham chiếu
+        if not ref_embedding_json:
+            return {"success": False, "message": "Thiếu dữ liệu embedding tham chiếu."}
+
+        try:
+            ref_list = json.loads(ref_embedding_json)
+        except Exception:
+            return {"success": False, "message": "Định dạng JSON embedding không hợp lệ."}
+
+        if not isinstance(ref_list, list) or len(ref_list) != 512:
+            return {"success": False, "message": "Định dạng embedding tham chiếu không hợp lệ."}
+
+        ref_vec = np.array(ref_list, dtype=np.float32)
+        sim = float(np.dot(ref_vec, vec))
+
+        if sim >= SAME_PERSON_THRESHOLD:
+            return {"success": True, "similarity": round(sim, 3)}
+        else:
+            return {
+                "success": False,
+                "similarity": round(sim, 3),
+                "message": "Khuôn mặt không khớp với ảnh tham chiếu. Vui lòng sử dụng cùng một người."
+            }
+    except Exception as e:
+        logger.error(f"Lỗi verify ekyc reference: {e}")
+        return {"success": False, "message": "Lỗi phân tích nhận diện."}

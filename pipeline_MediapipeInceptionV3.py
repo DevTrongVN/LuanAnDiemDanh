@@ -37,6 +37,7 @@ device = torch.device('cpu')
 DETECTOR_MODEL_PATH = "detector.tflite"
 SAVED_WEIGHTS_PATH = "model_v3_p_r1_0_r2_6_r3_3_weights.pt"
 DB_CSV_PATH = "database/face_bank_v3.csv"
+SAME_PERSON_THRESHOLD = 0.70
 
 def check_and_download_detector():
     if not os.path.exists(DETECTOR_MODEL_PATH):
@@ -421,6 +422,36 @@ def register_student_face_from_images(image_paths, mssv, name, db_csv_path=DB_CS
             img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
             h, w, _ = img_rgb.shape
 
+            # Phân nhánh: nếu ảnh đã được frontend crop sẵn chuẩn 160x160 -> bỏ qua detector, tránh crop 2 lần
+            is_pre_cropped_160 = (w == 160 and h == 160)
+
+            if is_pre_cropped_160:
+                gray_crop = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2GRAY)
+                mean_brightness = np.mean(gray_crop)
+                if mean_brightness < 40:
+                    error_logs.append("Môi trường quá tối")
+                    continue
+                if mean_brightness > 230:
+                    error_logs.append("Bị chói sáng/lóa")
+                    continue
+
+                vec = extract_embedding_from_crop(img_rgb)
+                if vec is not None:
+                    # Kiểm tra tính đồng nhất danh tính (Same-person Check) so với ảnh trực diện đầu tiên (ngưỡng Cosine Similarity >= 0.70)
+                    if len(student_vectors) > 0:
+                        sim_to_ref = float(np.dot(student_vectors[0], vec))
+                        if sim_to_ref < SAME_PERSON_THRESHOLD:
+                            error_logs.append(f"Góc {action_names[idx]} không khớp với ảnh tham chiếu (Cosine Similarity {sim_to_ref:.2f} < {SAME_PERSON_THRESHOLD:.2f})")
+                            continue
+                    student_vectors.append(vec)
+
+                img_filename = os.path.join(save_dir, f"{action_names[idx]}.jpg")
+                is_success, im_buf_arr = cv2.imencode(".jpg", img)
+                if is_success:
+                    im_buf_arr.tofile(img_filename)
+                continue
+
+            # Fallback tương thích ngược: ảnh toàn khung hình (Full Resolution) cần detector cắt mặt
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=img_rgb)
             detection_result = detector.detect(mp_image)
 
@@ -466,6 +497,12 @@ def register_student_face_from_images(image_paths, mssv, name, db_csv_path=DB_CS
 
                 vec = extract_embedding_from_crop(crop_face)
                 if vec is not None:
+                    # Kiểm tra cùng 1 người so với ảnh trực diện đầu tiên (ngưỡng Cosine Similarity >= 0.70)
+                    if len(student_vectors) > 0:
+                        sim_to_ref = float(np.dot(student_vectors[0], vec))
+                        if sim_to_ref < SAME_PERSON_THRESHOLD:
+                            error_logs.append(f"Góc {action_names[idx]} không khớp với ảnh tham chiếu (Cosine Similarity {sim_to_ref:.2f} < {SAME_PERSON_THRESHOLD:.2f})")
+                            continue
                     student_vectors.append(vec)
 
                 pad = 30
@@ -481,7 +518,7 @@ def register_student_face_from_images(image_paths, mssv, name, db_csv_path=DB_CS
     if len(student_vectors) < 4:
         unique_errors = list(set(error_logs))
         err_detail = " | ".join(unique_errors) if unique_errors else "Khuôn mặt không rõ ràng."
-        return False, f"Chỉ hợp lệ {len(student_vectors)}/6 ảnh. Lỗi: {err_detail}. Vui lòng quay góc vừa phải."
+        return False, f"Chỉ hợp lệ {len(student_vectors)}/6 ảnh. Lỗi: {err_detail}. Vui lòng sử dụng cùng một người và quay góc vừa phải."
 
     avg_vector = np.mean(student_vectors, axis=0)
     avg_vector = avg_vector / np.linalg.norm(avg_vector)
@@ -766,6 +803,10 @@ def process_attendance(media_path, excel_path=None):
                         tracker.tracks[track_id]["confirmed_mssv"] = "Unknown"
                         box_color = (0, 0, 255)
                         display_label = f"ID:{track_id} | Unknown"
+                        # Chỉ lưu và xuất ảnh "Unknown" 1 lần duy nhất cho mỗi Track ID
+                        if not tracker.tracks[track_id].get("has_logged_unknown"):
+                            handle_detected_face(annotated_current, rx1, ry1, rx2, ry2, best_sim, "Unknown", timestamp_str, is_known=False)
+                            tracker.tracks[track_id]["has_logged_unknown"] = True
 
                 cv2.rectangle(annotated_current, (int(rx1), int(ry1)), (int(rx2), int(ry2)), box_color, 2)
                 cv2.putText(annotated_current, display_label, (int(rx1) + 4, int(ry1) + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.45, box_color, 1, cv2.LINE_AA)
@@ -1317,7 +1358,7 @@ def _run_realtime_faces_batch(frames_meta, crops_rgb, crops_raw, class_mssv_list
     min_ratio = cfg.get("min_vote_ratio", 0.6)
 
     # ---- Pha 1: tracker tuần tự theo khung; box của frontend nằm trong hệ toạ độ ảnh detect (w, h) ----
-    pending = []          # (track_id, crop_rgb, crop_jpeg_bytes, frame_seq)
+    pending = []          # (track_id, crop_rgb, crop_jpeg_bytes, frame_seq, is_aligned)
     last_tracked, last_wh = [], (0, 0)
     for fr in frames_meta:
         w, h = fr["w"], fr["h"]
@@ -1325,8 +1366,9 @@ def _run_realtime_faces_batch(frames_meta, crops_rgb, crops_raw, class_mssv_list
         raw_boxes = [list(f["box"]) for f in faces]
         tracked = tracker.update(raw_boxes)
         last_tracked, last_wh = tracked, (w, h)
-        # tracker trả lại ĐÚNG đối tượng box vừa truyền vào cho track khớp/mới -> ghép box <-> crop theo id()
+        # tracker trả lại ĐÚNG đối tượng box vừa truyền vào cho track khớp/mới -> ghép box <-> crop và alignment_ok theo id()
         crop_of = {id(b): f["c"] for b, f in zip(raw_boxes, faces)}
+        align_of = {id(b): bool(f.get("alignment_ok", False)) for b, f in zip(raw_boxes, faces)}
 
         for track_id, box in tracked:
             trk = tracker.tracks.get(track_id)
@@ -1340,7 +1382,8 @@ def _run_realtime_faces_batch(frames_meta, crops_rgb, crops_raw, class_mssv_list
             ci = crop_of.get(id(box), -1)
             if ci < 0 or crops_rgb[ci] is None:
                 continue
-            pending.append((track_id, crops_rgb[ci], crops_raw[ci], fr.get("seq")))
+            is_aligned = align_of.get(id(box), False)
+            pending.append((track_id, crops_rgb[ci], crops_raw[ci], fr.get("seq"), is_aligned))
 
     # ---- Pha 2: 1 lần forward cho toàn bộ crop (Inception/preprocess y như cũ), so khớp DB bằng 1 phép nhân ma trận ----
     detected_faces = []
@@ -1357,9 +1400,12 @@ def _run_realtime_faces_batch(frames_meta, crops_rgb, crops_raw, class_mssv_list
                 match_ms = (time.time() - start_match) * 1000
                 print(f"⏱️ [So khớp DB] Tìm kiếm {len(valid)} khuôn mặt trong CSDL mất: {match_ms:.2f} ms")
 
-            for i, ((tid, _, raw, seq), _) in enumerate(valid):
+            for i, ((tid, _, raw, seq, is_aligned), _) in enumerate(valid):
                 trk = tracker.tracks.get(tid)
                 if trk is None:
+                    continue
+                # BẢO VỆ TUYỆT ĐỐI: Chỉ mẫu đạt chuẩn Face Alignment (màu xanh / alignment_ok=True) mới được tham gia voting!
+                if not is_aligned:
                     continue
                 sim = float(best_sim[i]) if has_reg else 0.0
                 pred = db_info_list[best_idx[i]] if (has_reg and sim >= cfg["rec_thresh"]) else "Unknown"
