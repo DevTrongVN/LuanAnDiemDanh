@@ -11,3 +11,4 @@ mediapipe
 pandas
 openpyxl
 xlrd
+python-dotenv

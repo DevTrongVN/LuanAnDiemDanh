@@ -13,9 +13,11 @@ uploads/
 system_events.log
 database/.session_secret
 
-# Trọng số AI (quá nặng để đưa lên Git)
+# Trọng số mô hình AI (quá nặng để đưa lên Git)
 *.pt
 *.tflite
+model_v3_p_r1_0_r2_6_r3_3_weights.pt
+detector.tflite
 
 # Môi trường Python & Cache
 __pycache__/
@@ -35,3 +37,17 @@ model_size.py
 project_all_code*.txt
 New Text Document.txt
 HUONG_DAN_CAI_DAT.md
+
+# File tạm, ghi chú môi trường và báo cáo rà soát nội bộ
+git-review/
+cap_nhat_env.txt
+ThuVien.txt
+*.patch
+*.tmp
+*.temp
+
+# IDE & Hệ điều hành
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

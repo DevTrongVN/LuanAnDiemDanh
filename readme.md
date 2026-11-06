@@ -6,6 +6,12 @@ Hệ thống điểm danh sinh viên tự động sử dụng MediaPipe (nhận 
 - Python 3.9 trở lên.
 
 ## 2. Cài đặt môi trường
+**⚠️ Lưu ý quan trọng khi triển khai trên máy chủ Linux (Ubuntu/Debian):**
+Hệ thống sử dụng OpenCV và MediaPipe nên yêu cầu các thư viện đồ họa lõi của hệ điều hành (system libraries). Bạn phải cài đặt các gói này trước khi thiết lập Python:
+```bash
+sudo apt-get update
+sudo apt-get install -y libgl1 libgles2 libegl1 libglib2.0-0
+
 Tạo môi trường ảo và cài đặt các thư viện cần thiết:
 ```bash
 python -m venv venv

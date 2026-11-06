@@ -11,6 +11,9 @@ import time
 from collections import defaultdict, deque
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from PIL import Image
 from starlette.requests import Request
 from starlette.responses import JSONResponse
