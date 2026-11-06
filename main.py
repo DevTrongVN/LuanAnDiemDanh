@@ -80,7 +80,7 @@ app.add_middleware(
         "/api/realtime_stream": 12 * 1024 * 1024,   # batch 10 frame độ phân giải cao (<= 1920px)
         "/api/diem_danh/upload_chunk": 6 * 1024 * 1024,      # chunk 5MB + phần form
         "/api/dang_ky_khuon_mat": 25 * 1024 * 1024,
-        "/api/ekyc/verify_reference": 2 * 1024 * 1024,
+        "/api/ekyc/verify_reference": 10 * 1024 * 1024,
         "/api/upload_realtime_class_list": 6 * 1024 * 1024,
     },
     default=1 * 1024 * 1024,
