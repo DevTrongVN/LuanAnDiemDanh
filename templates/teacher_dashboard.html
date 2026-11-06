@@ -379,32 +379,35 @@
             justify-content: center;
             height: 100%;
             width: 100%;
-            padding: 16px;
+            padding: 8px 12px;
+            box-sizing: border-box;
         }
 
         .face-silhouette-svg {
             width: auto;
-            height: 68%; /* Chiếm ~2/3 chiều cao camera container */
-            max-height: 310px; /* An toàn dưới mức 440px của HUD, chừa chỗ cho text-pill và padding */
-            min-height: 180px; /* Hạ mức tối thiểu xuống để không bị tràn trên điện thoại */
+            height: 80%; /* Chiếm ~80% (4/5) chiều cao camera container */
+            max-height: 360px; /* Tối ưu cho HUD 440px-450px, chừa chỗ thông thoáng cho text-pill và viền */
+            max-width: 88%; /* Chống tràn bề ngang trên các thiết bị màn hình hẹp */
+            min-height: 180px; /* Giữ tỷ lệ hiển thị rõ ràng trên màn hình nhỏ */
             opacity: 0.52;
             filter: drop-shadow(0 2px 8px rgba(0,0,0,0.45));
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .guide-text-pill {
-            margin-top: 10px;
+            margin-top: 8px;
             background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(8px);
             color: rgba(255, 255, 255, 0.95);
             font-size: 0.82rem;
             font-weight: 600;
-            padding: 6px 18px;
+            padding: 5px 16px;
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.25);
             box-shadow: 0 4px 12px rgba(0,0,0,0.25);
             letter-spacing: 0.02em;
             transition: all 0.3s ease;
+            white-space: nowrap;
         }
 
         /* Trạng thái 1: Đang dò tìm khuôn mặt (Xám / Trắng) */
@@ -711,6 +714,19 @@
 
         /* Màn hình nhỏ (< 576px) */
         @media (max-width: 576px) {
+            .guide-oval-wrapper {
+                padding: 6px 8px;
+            }
+            .face-silhouette-svg {
+                height: 80%;
+                max-height: 350px;
+                max-width: 86%;
+            }
+            .guide-text-pill {
+                font-size: 0.75rem;
+                padding: 4px 12px;
+                margin-top: 6px;
+            }
             .navbar-brand-custom span:last-child {
                 font-size: 1.05rem;
             }
@@ -743,6 +759,15 @@
 
         /* Màn hình rất nhỏ (< 380px) */
         @media (max-width: 380px) {
+            .face-silhouette-svg {
+                max-height: 320px;
+                max-width: 84%;
+            }
+            .guide-text-pill {
+                font-size: 0.7rem;
+                padding: 3px 10px;
+                margin-top: 4px;
+            }
             .segmented-control .nav-link {
                 padding: 8px 4px;
                 font-size: 0.75rem;
