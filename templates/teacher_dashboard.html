@@ -384,36 +384,78 @@
 
         .face-silhouette-svg {
             width: auto;
-            height: 72%;
-            max-height: 290px;
-            min-height: 170px;
-            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+            height: 68%; /* Chiếm ~2/3 chiều cao camera container */
+            max-height: 310px; /* An toàn dưới mức 440px của HUD, chừa chỗ cho text-pill và padding */
+            min-height: 180px; /* Hạ mức tối thiểu xuống để không bị tràn trên điện thoại */
+            opacity: 0.52;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.45));
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .guide-text-pill {
             margin-top: 10px;
-            background: rgba(15, 23, 42, 0.75);
+            background: rgba(15, 23, 42, 0.85);
             backdrop-filter: blur(8px);
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 0.8rem;
+            color: rgba(255, 255, 255, 0.95);
+            font-size: 0.82rem;
             font-weight: 600;
-            padding: 5px 16px;
+            padding: 6px 18px;
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             box-shadow: 0 4px 12px rgba(0,0,0,0.25);
             letter-spacing: 0.02em;
             transition: all 0.3s ease;
         }
 
-        .realtime-face-guide.scan-success .face-silhouette-svg ellipse:first-child {
+        /* Trạng thái 1: Đang dò tìm khuôn mặt (Xám / Trắng) */
+        .realtime-face-guide.state-searching .face-silhouette-svg {
+            opacity: 0.45;
+        }
+        .realtime-face-guide.state-searching .guide-text-pill {
+            background: rgba(30, 41, 59, 0.85);
+            color: rgba(255, 255, 255, 0.9);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Trạng thái 2: Cần điều chỉnh vị trí (Cam / Vàng) */
+        .realtime-face-guide.state-adjust .face-silhouette-svg {
+            opacity: 0.8;
+        }
+        .realtime-face-guide.state-adjust .face-silhouette-svg path,
+        .realtime-face-guide.state-adjust .face-silhouette-svg ellipse {
+            stroke: #f59e0b !important;
+        }
+        .realtime-face-guide.state-adjust .guide-text-pill {
+            background: rgba(217, 119, 6, 0.92);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Trạng thái 3: Khuôn mặt phù hợp / Đã vào vùng nhận diện (Xanh dương / Xanh lá) */
+        .realtime-face-guide.state-aligned .face-silhouette-svg {
+            opacity: 0.9;
+        }
+        .realtime-face-guide.state-aligned .face-silhouette-svg path,
+        .realtime-face-guide.state-aligned .face-silhouette-svg ellipse {
+            stroke: #3b82f6 !important;
+            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.7));
+        }
+        .realtime-face-guide.state-aligned .guide-text-pill {
+            background: rgba(37, 99, 235, 0.92);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.45);
+        }
+
+        /* Khi nhận diện thành công sinh viên */
+        .realtime-face-guide.scan-success .face-silhouette-svg path,
+        .realtime-face-guide.scan-success .face-silhouette-svg ellipse {
             stroke: #10b981 !important;
             filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.8));
         }
 
         .realtime-face-guide.scan-success .guide-text-pill {
-            background: rgba(16, 185, 129, 0.85);
-            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(16, 185, 129, 0.92);
+            border-color: rgba(255, 255, 255, 0.45);
             color: #ffffff;
         }
 
@@ -656,7 +698,7 @@
                 height: 130px;
             }
             .camera-hud-container {
-                height: 270px;
+                height: 450px;
             }
             .camera-controls-bar {
                 width: 100%;
@@ -867,21 +909,36 @@
                         <div id="realtimeFaceGuide" class="realtime-face-guide d-none">
                             <div class="guide-oval-wrapper">
                                 <svg class="face-silhouette-svg" viewBox="0 0 200 250" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <!-- Đường viền Oval mặt chính -->
-                                    <ellipse cx="100" cy="120" rx="65" ry="85" stroke="rgba(255, 255, 255, 0.45)" stroke-width="2.5" stroke-dasharray="6 4" />
+                                    <!-- Đường viền vòm đầu & tóc trên đỉnh (Hair & Head Contour) -->
+                                    <path class="guide-hair" d="M 34 118 C 28 60, 48 16, 100 14 C 152 16, 172 60, 166 118" 
+                                          stroke="rgba(255, 255, 255, 0.45)" stroke-width="2.5" stroke-dasharray="6 4" stroke-linecap="round" />
+                                    <path class="guide-hair-accent" d="M 52 48 Q 100 28 148 48" 
+                                          stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" stroke-linecap="round" />
+                                    
+                                    <!-- Hai bên mặt & đường viền cằm (Jawline & Chin Contour) -->
+                                    <path class="guide-jaw" d="M 38 112 C 38 178, 68 214, 100 214 C 132 214, 162 178, 162 112" 
+                                          stroke="rgba(255, 255, 255, 0.5)" stroke-width="2.5" stroke-linecap="round" />
+                                    
+                                    <!-- Lông mày định vị -->
+                                    <path d="M 62 92 Q 76 87 90 92" stroke="rgba(255, 255, 255, 0.35)" stroke-width="2" stroke-linecap="round" />
+                                    <path d="M 110 92 Q 124 87 138 92" stroke="rgba(255, 255, 255, 0.35)" stroke-width="2" stroke-linecap="round" />
+
                                     <!-- Mắt trái & Mắt phải -->
-                                    <ellipse cx="75" cy="105" rx="10" ry="5" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" />
-                                    <ellipse cx="125" cy="105" rx="10" ry="5" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" />
+                                    <ellipse cx="76" cy="106" rx="9" ry="5" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" />
+                                    <ellipse cx="124" cy="106" rx="9" ry="5" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" />
+                                    
                                     <!-- Sống mũi -->
-                                    <path d="M100 100 V125 L94 132 H104" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path d="M 100 98 V 126 L 94 133 H 104" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                                    
                                     <!-- Khuôn miệng -->
-                                    <path d="M82 155 Q100 165 118 155" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" stroke-linecap="round" />
-                                    <!-- Căn chỉnh trán & cằm -->
-                                    <path d="M88 45 Q100 42 112 45" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
-                                    <path d="M88 195 Q100 200 112 195" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
+                                    <path d="M 82 160 Q 100 170 118 160" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" stroke-linecap="round" />
+                                    
+                                    <!-- Điểm mốc đỉnh trán & đáy cằm -->
+                                    <path d="M 88 38 Q 100 35 112 38" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
+                                    <path d="M 88 200 Q 100 205 112 200" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
                                 </svg>
                                 <span class="guide-text-pill">
-                                    <i class="bi bi-person-bounding-box me-1"></i> Đưa khuôn mặt vào giữa khung
+                                    <i class="bi bi-search me-1"></i> Đang dò tìm khuôn mặt...
                                 </span>
                             </div>
                         </div>
@@ -1311,6 +1368,22 @@
         let currentFacingMode = "environment";
         let isSendingFrame = false;
 
+        function isFrontCameraTrack(track, preferredMode = "environment") {
+            if (!track) return preferredMode === "user";
+            const s = track.getSettings ? track.getSettings() : {};
+            if (s.facingMode) {
+                return s.facingMode === 'user';
+            }
+            const lbl = (track.label || '').toLowerCase();
+            if (lbl.includes('front') || lbl.includes('user') || lbl.includes('trước') || lbl.includes('facetime') || lbl.includes('integrated')) {
+                return true;
+            }
+            if (lbl.includes('back') || lbl.includes('rear') || lbl.includes('sau') || lbl.includes('environment')) {
+                return false;
+            }
+            return preferredMode === "user";
+        }
+
         async function downloadRealtimeExcel() {
             if (Object.keys(presentStudentsData).length === 0) {
                 alert("Chưa có sinh viên nào được điểm danh!");
@@ -1361,7 +1434,7 @@
                 const videoEl = document.getElementById('webcamLive');
                 videoEl.srcObject = liveStream;
                 const track = liveStream.getVideoTracks()[0];
-                const isFront = track.getSettings().facingMode === 'user';
+                const isFront = isFrontCameraTrack(track, currentFacingMode);
                 videoEl.style.transform = isFront ? 'scaleX(-1)' : 'scaleX(1)';
                 
                 // Tự động hiển thị khung căn chỉnh khuôn mặt mờ khi camera hoạt động
@@ -1625,8 +1698,8 @@
             fullCanvas.width = ow; fullCanvas.height = oh;
             const ctx = fullCanvas.getContext('2d');
             const track = liveStream ? liveStream.getVideoTracks()[0] : null;
-            const isFront = track && track.getSettings().facingMode === 'user';
-            if (isFront) { ctx.translate(ow, 0); ctx.scale(-1, 1); }   // giữ đúng hành vi cũ: ảnh gửi đi bị lật khi camera trước
+            const isFront = isFrontCameraTrack(track, currentFacingMode);
+            if (isFront) { ctx.translate(ow, 0); ctx.scale(-1, 1); }   // mirror ngang đúng 1 lần khi camera trước
             ctx.drawImage(videoEl, 0, 0, ow, oh);
             if (isFront) ctx.setTransform(1, 0, 0, 1, 0, 0);
 
@@ -1654,6 +1727,119 @@
             return { seq: ++frameSeq, ts: Date.now(), w: dw, h: dh, faces };
         }
 
+        // ==========================================================
+        // CẤU HÌNH & HƯỚNG DẪN CĂN CHỈNH KHUÔN MẶT (TEACHER DASHBOARD)
+        // ==========================================================
+        const TEACHER_ALIGN_CONFIG = {
+            enabled: true,
+            minSizeRatio: 0.25,        // Mặt chiếm tối thiểu 25% cạnh nhỏ nhất của frame
+            maxSizeRatio: 0.75,        // Mặt chiếm tối đa 75% cạnh nhỏ nhất của frame
+            centerToleranceX: 0.16,    // Lệch tâm trục X tối đa 16% frame width
+            centerToleranceY: 0.18     // Lệch tâm trục Y tối đa 18% frame height
+        };
+
+        function evaluateTeacherFaceAlignment(box, frameW, frameH) {
+            if (!box || !TEACHER_ALIGN_CONFIG.enabled) {
+                return { ok: true, status: "state-aligned", msg: "Khuôn mặt đã vào vùng nhận diện", icon: "bi-check-circle-fill" };
+            }
+            const faceW = box[2] - box[0];
+            const faceH = box[3] - box[1];
+            const faceCenterX = box[0] + (faceW / 2);
+            const faceCenterY = box[1] + (faceH / 2);
+
+            const frameCenterX = frameW / 2;
+            const frameCenterY = frameH / 2;
+
+            const minSide = Math.min(frameW, frameH);
+            const faceSize = Math.max(faceW, faceH);
+            const sizeRatio = faceSize / minSide;
+
+            const distX = (faceCenterX - frameCenterX) / frameW;
+            const distY = (faceCenterY - frameCenterY) / frameH;
+
+            const track = liveStream ? liveStream.getVideoTracks()[0] : null;
+            const isFront = isFrontCameraTrack(track, currentFacingMode);
+
+            // 1. Kiểm tra kích thước khuôn mặt
+            if (sizeRatio < TEACHER_ALIGN_CONFIG.minSizeRatio) {
+                return { ok: false, status: "state-adjust", msg: "Hãy tiến lại gần camera", icon: "bi-zoom-in" };
+            }
+            if (sizeRatio > TEACHER_ALIGN_CONFIG.maxSizeRatio) {
+                return { ok: false, status: "state-adjust", msg: "Hãy lùi ra xa một chút", icon: "bi-zoom-out" };
+            }
+
+            // 2. Kiểm tra lệch trục X (đồng bộ hướng di chuyển theo camera trước / camera sau)
+            if (isFront) {
+                if (distX > TEACHER_ALIGN_CONFIG.centerToleranceX) {
+                    return { ok: false, status: "state-adjust", msg: "Hãy dịch mặt sang trái", icon: "bi-arrow-left" };
+                }
+                if (distX < -TEACHER_ALIGN_CONFIG.centerToleranceX) {
+                    return { ok: false, status: "state-adjust", msg: "Hãy dịch mặt sang phải", icon: "bi-arrow-right" };
+                }
+            } else {
+                if (distX > TEACHER_ALIGN_CONFIG.centerToleranceX) {
+                    return { ok: false, status: "state-adjust", msg: "Hãy hướng camera sang phải", icon: "bi-arrow-right" };
+                }
+                if (distX < -TEACHER_ALIGN_CONFIG.centerToleranceX) {
+                    return { ok: false, status: "state-adjust", msg: "Hãy hướng camera sang trái", icon: "bi-arrow-left" };
+                }
+            }
+
+            // 3. Kiểm tra lệch trục Y
+            if (distY < -TEACHER_ALIGN_CONFIG.centerToleranceY) {
+                return { ok: false, status: "state-adjust", msg: isFront ? "Hãy hạ mặt xuống một chút" : "Hãy hạ camera xuống một chút", icon: "bi-arrow-down" };
+            }
+            if (distY > TEACHER_ALIGN_CONFIG.centerToleranceY) {
+                return { ok: false, status: "state-adjust", msg: isFront ? "Hãy nâng mặt lên một chút" : "Hãy nâng camera lên một chút", icon: "bi-arrow-up" };
+            }
+
+            return { ok: true, status: "state-aligned", msg: "Khuôn mặt đã vào vùng nhận diện", icon: "bi-person-check-fill" };
+        }
+
+        function updateTeacherGuideUI(statusClass, msg, iconClass = "bi-person-bounding-box") {
+            const guide = document.getElementById('realtimeFaceGuide');
+            const pill = document.querySelector('.guide-text-pill');
+            if (!guide || !pill) return;
+
+            guide.classList.remove('state-searching', 'state-adjust', 'state-aligned');
+            guide.classList.add(statusClass);
+
+            pill.innerHTML = `<i class="bi ${iconClass} me-1"></i> ${msg}`;
+        }
+
+        function updateTeacherGuideFromFrame(fr) {
+            if (!fr || !fr.faces || fr.faces.length === 0) {
+                updateTeacherGuideUI("state-searching", "Đang dò tìm khuôn mặt...", "bi-search");
+                return;
+            }
+
+            // Đánh giá alignment cho từng khuôn mặt trong frame
+            let anyFaceAligned = false;
+            for (const f of fr.faces) {
+                const evalResult = evaluateTeacherFaceAlignment(f.box, fr.w, fr.h);
+                f.alignment_ok = evalResult.ok;
+                if (evalResult.ok) anyFaceAligned = true;
+            }
+            fr.alignment_ok = anyFaceAligned;
+
+            // Tìm khuôn mặt ưu tiên gần tâm nhất để hiển thị phản hồi trên Silhouette Guide
+            const frameCenterX = fr.w / 2, frameCenterY = fr.h / 2;
+            let primaryFace = fr.faces[0];
+            let bestDist = Infinity;
+            for (const f of fr.faces) {
+                const cx = f.box[0] + (f.box[2] - f.box[0]) / 2;
+                const cy = f.box[1] + (f.box[3] - f.box[1]) / 2;
+                const d = Math.hypot(cx - frameCenterX, cy - frameCenterY);
+                if (d < bestDist) {
+                    bestDist = d;
+                    primaryFace = f;
+                }
+            }
+
+            const guideEval = evaluateTeacherFaceAlignment(primaryFace.box, fr.w, fr.h);
+            updateTeacherGuideUI(guideEval.status, guideEval.msg, guideEval.icon);
+        }
+
         function realtimeLoop() {
             frameBuffer = [];
             frameSeq = 0;
@@ -1664,6 +1850,9 @@
                 try {
                     const fr = await captureAndDetect();
                     if (!fr || !isRealtimeRunning) return;
+
+                    // CẬP NHẬT UI HƯỚNG DẪN CĂN CHỈNH & GẮN METADATA (KHÔNG CHẶN BUFFER)
+                    updateTeacherGuideFromFrame(fr);
 
                     frameBuffer.push(fr);
                     // Nếu request trước chưa xong, chỉ giữ BATCH_SIZE khung mới nhất
@@ -1708,10 +1897,11 @@
                 const crops = [];
                 const metaFrames = batch.map(fr => ({
                     seq: fr.seq, ts: fr.ts, w: fr.w, h: fr.h,
+                    alignment_ok: !!fr.alignment_ok,
                     faces: fr.faces.map(f => {
                         let c = -1;
                         if (f.blob) { c = crops.length; crops.push(f.blob); }
-                        return { box: f.box, score: Number(f.score.toFixed(4)), c };
+                        return { box: f.box, score: Number(f.score.toFixed(4)), c, alignment_ok: !!f.alignment_ok };
                     })
                 }));
                 const fd = new FormData();
