@@ -200,8 +200,8 @@
 
         /* Biometric Camera Viewport Tự Thích Ứng */
         .camera-wrapper {
-            width: clamp(210px, 68vw, 270px);
-            height: clamp(210px, 68vw, 270px);
+            width: clamp(250px, 85vw, 320px); /* Tăng kích thước so với cũ */
+            height: clamp(250px, 85vw, 320px); /* Đồng bộ height bằng width */
             max-width: 82vw;
             max-height: 82vw;
             margin: 0 auto;
@@ -276,10 +276,28 @@
 
         .student-silhouette-svg {
             width: auto;
-            height: 72%;
-            max-height: 200px;
+            height: 72%; /* Chiếm ~2/3 chiều cao camera wrapper */
+            max-height: 220px;
+            min-height: 160px;
+            opacity: 0.52;
             filter: drop-shadow(0 2px 6px rgba(0,0,0,0.45));
             transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Trạng thái căn chỉnh: Cần điều chỉnh (Vàng cam) */
+        .student-face-guide.state-adjust .student-silhouette-svg path,
+        .student-face-guide.state-adjust .student-silhouette-svg ellipse {
+            stroke: #f59e0b !important;
+        }
+
+        /* Trạng thái căn chỉnh: Đạt chuẩn (Xanh lá) */
+        .student-face-guide.state-aligned .student-silhouette-svg {
+            opacity: 0.95;
+        }
+        .student-face-guide.state-aligned .student-silhouette-svg path,
+        .student-face-guide.state-aligned .student-silhouette-svg ellipse {
+            stroke: #10b981 !important;
+            filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.7));
         }
 
         .face-features-group {
@@ -332,57 +350,69 @@
             transform: translate(0, 10px) scaleY(0.92);
         }
 
-        /* Label góc chụp nhỏ phía dưới */
-        .student-pose-label {
-            position: absolute;
-            bottom: 22px;
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(6px);
-            color: rgba(255, 255, 255, 0.95);
-            font-size: 0.725rem;
-            font-weight: 600;
-            padding: 3px 12px;
+        /* Badge góc chụp hiện tại (đặt phía dưới camera) */
+        .student-pose-badge {
+            display: inline-flex;
+            align-items: center;
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.25);
-            letter-spacing: 0.02em;
+            padding: 5px 16px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            box-shadow: 0 1px 3px rgba(37, 99, 235, 0.08);
             transition: all 0.25s ease;
         }
 
-        /* Badge phản hồi "ĐÃ CHỤP! ✓" */
-        .snap-success-badge {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0.6);
-            background: rgba(16, 185, 129, 0.95);
-            backdrop-filter: blur(8px);
-            color: #ffffff;
+        /* Banner thông báo trạng thái eKYC chuyên dụng (không trùng lặp, không bị cắt) */
+        .instruction-banner {
+            border-radius: 12px;
+            padding: 10px 16px;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 0.95rem;
-            font-weight: 800;
-            padding: 8px 18px;
-            border-radius: 30px;
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5), 0 0 0 4px rgba(255, 255, 255, 0.4);
-            opacity: 0;
-            pointer-events: none;
-            z-index: 30;
-            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
-            letter-spacing: 0.03em;
+            font-weight: 600;
+            line-height: 1.4;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+            word-break: break-word;
+        }
+
+        .instruction-banner.state-adjust {
+            background: #fffbeb;
+            border: 1.5px solid #f59e0b;
+            color: #b45309;
+        }
+
+        .instruction-banner.state-aligned {
+            background: #ecfdf5;
+            border: 1.5px solid #10b981;
+            color: #047857;
+        }
+
+        .instruction-banner.state-warning {
+            background: #fefce8;
+            border: 1.5px solid #eab308;
+            color: #854d0e;
+        }
+
+        .instruction-banner.state-danger {
+            background: #fef2f2;
+            border: 1.5px solid #ef4444;
+            color: #b91c1c;
+        }
+
+        .instruction-text {
             display: inline-flex;
             align-items: center;
-        }
-
-        .snap-success-badge.show-badge {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
-
-        /* Instruction & Stepper */
-        #instructionText {
-            font-size: 1.15rem;
-            font-weight: 700;
-            transition: all 0.3s ease;
-            min-height: 28px;
+            justify-content: center;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin: 0;
         }
 
         /* Modern Progress Bar */
@@ -590,10 +620,14 @@
                 padding: 4px 10px;
                 font-size: 0.725rem;
             }
-            .student-pose-label {
-                bottom: 14px;
-                font-size: 0.675rem;
-                padding: 2px 8px;
+            .student-pose-badge {
+                font-size: 0.75rem;
+                padding: 3px 10px;
+            }
+            .instruction-banner {
+                font-size: 0.85rem;
+                padding: 6px 12px;
+                min-height: 42px;
             }
             .btn-scan-primary {
                 padding: 12px;
@@ -696,11 +730,25 @@
                             <div id="studentFaceGuide" class="student-face-guide">
                                 <div class="student-guide-content">
                                     <svg id="studentSilhouetteSvg" class="student-silhouette-svg pose-front" viewBox="0 0 200 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <!-- Khung Oval định vị đầu -->
-                                        <ellipse class="head-oval" cx="100" cy="115" rx="60" ry="78" stroke="rgba(255, 255, 255, 0.45)" stroke-width="2.5" stroke-dasharray="6 4" />
+                                        <!-- Vòm đầu & tóc trên đỉnh (Hair & Head Contour) -->
+                                        <path class="head-hair" d="M 36 112 C 30 58, 48 16, 100 14 C 152 16, 170 58, 164 112" 
+                                              stroke="rgba(255, 255, 255, 0.45)" stroke-width="2.5" stroke-dasharray="6 4" stroke-linecap="round" />
+                                        <path class="head-hair-accent" d="M 54 46 Q 100 28 146 46" 
+                                              stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.8" stroke-linecap="round" />
+                                        
+                                        <!-- Hai bên mặt & đường viền cằm (Jawline & Chin Contour) -->
+                                        <path class="head-jaw" d="M 40 108 C 40 172, 70 206, 100 206 C 130 206, 160 172, 160 108" 
+                                              stroke="rgba(255, 255, 255, 0.5)" stroke-width="2.5" stroke-linecap="round" />
+                                        
+                                        <!-- Khung Oval định vị đầu (để scaleX phản hồi theo pose) -->
+                                        <ellipse class="head-oval" cx="100" cy="115" rx="60" ry="78" stroke="rgba(255, 255, 255, 0.25)" stroke-width="1.5" stroke-dasharray="4 4" />
                                         
                                         <!-- Nhóm ngũ quan (mắt, mũi, miệng) phản hồi theo góc quay -->
                                         <g id="studentFaceFeatures" class="face-features-group">
+                                            <!-- Lông mày -->
+                                            <path class="eyebrow-left" d="M 64 88 Q 77 84 90 88" stroke="rgba(255, 255, 255, 0.35)" stroke-width="1.8" stroke-linecap="round" />
+                                            <path class="eyebrow-right" d="M 110 88 Q 123 84 136 88" stroke="rgba(255, 255, 255, 0.35)" stroke-width="1.8" stroke-linecap="round" />
+
                                             <!-- Mắt -->
                                             <ellipse class="eye-left" cx="78" cy="102" rx="9" ry="5" stroke="rgba(255, 255, 255, 0.45)" stroke-width="2" />
                                             <ellipse class="eye-right" cx="122" cy="102" rx="9" ry="5" stroke="rgba(255, 255, 255, 0.45)" stroke-width="2" />
@@ -716,14 +764,9 @@
                                         </g>
                                         
                                         <!-- Định vị trán & cằm -->
-                                        <path d="M88 45 Q100 42 112 45" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
-                                        <path d="M88 185 Q100 190 112 185" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
+                                        <path d="M88 42 Q100 39 112 42" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
+                                        <path d="M88 192 Q100 197 112 192" stroke="rgba(255, 255, 255, 0.3)" stroke-width="2" stroke-linecap="round" />
                                     </svg>
-                                    
-                                    <!-- Hướng dẫn phụ góc chụp nhỏ -->
-                                    <span id="studentPoseLabel" class="student-pose-label">
-                                        <i class="bi bi-arrows-fullscreen"></i> Căn giữa khuôn mặt
-                                    </span>
                                 </div>
                             </div>
 
@@ -733,10 +776,36 @@
                             </div>
                         </div>
                         
-                        <div class="text-center mb-4">
-                            <div id="instructionText" class="text-primary mb-2">Hãy để khuôn mặt vào giữa vòng tròn</div>
-                            <div class="progress progress-custom">
+                        <!-- Khu vực Hướng dẫn & Tiến trình eKYC (tách biệt rõ ràng với camera) -->
+                        <div class="ekyc-instruction-container text-center mb-3">
+                            <!-- Badge góc chụp hiện tại (cập nhật từ updateFaceGuidePose) -->
+                            <div class="d-flex justify-content-center align-items-center mb-2">
+                                <span id="studentPoseLabel" class="student-pose-badge">
+                                    <i class="bi bi-camera-video me-1"></i> 1/6: Nhìn thẳng trực diện
+                                </span>
+                            </div>
+
+                            <!-- Hộp thông báo trạng thái hướng dẫn (duy nhất, không bị cắt chữ) -->
+                            <div id="instructionCard" class="instruction-banner state-adjust mb-2">
+                                <div id="instructionText" class="instruction-text">
+                                    <i class="bi bi-person-bounding-box me-1"></i> Hãy để khuôn mặt vào giữa vòng tròn
+                                </div>
+                            </div>
+
+                            <!-- Thanh tiến trình chính (Độ ổn định 1000ms & Countdown 2000ms) -->
+                            <div class="progress progress-custom mb-2">
                                 <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" style="width: 0%"></div>
+                            </div>
+
+                            <!-- Thanh tiến trình phụ: Chờ độ nét tối ưu (chỉ hiện khi đang đếm 5s Sharpness Timeout) -->
+                            <div id="sharpnessTimeoutContainer" class="d-none">
+                                <div class="d-flex justify-content-between align-items-center small text-muted mb-1 px-1">
+                                    <span id="timeoutLabel"><i class="bi bi-hourglass-split text-warning me-1"></i> Khuôn mặt đã đúng vị trí. Đang chờ độ nét...</span>
+                                    <span id="timeoutCountText" class="fw-bold text-warning">5s</span>
+                                </div>
+                                <div class="progress" style="height: 5px; border-radius: 4px; background: #e2e8f0;">
+                                    <div id="timeoutProgressBar" class="progress-bar bg-warning progress-bar-striped progress-bar-animated" style="width: 0%; transition: width 0.1s linear;"></div>
+                                </div>
                             </div>
                         </div>
 
@@ -744,10 +813,15 @@
                             <input type="hidden" name="mssv" value="{{ mssv }}">
                             <input type="hidden" name="name" value="{{ name }}">
                             
-                            <button type="button" id="startBtn" class="btn-scan-primary">
-                                <i class="bi bi-camera"></i>
-                                <span>Bắt Đầu Quét Khuôn Mặt</span>
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="button" id="startBtn" class="btn-scan-primary flex-grow-1">
+                                    <i class="bi bi-camera"></i>
+                                    <span>Bắt Đầu Quét Khuôn Mặt</span>
+                                </button>
+                                <button type="button" id="switchStudentCamBtn" class="btn btn-outline-secondary px-3 rounded-3" onclick="switchStudentCamera()" title="Đổi camera trước / sau">
+                                    <i class="bi bi-arrow-repeat fs-5"></i>
+                                </button>
+                            </div>
                             
                             <button type="button" id="uploadingBtn" class="btn btn-secondary w-100 py-3 fw-bold rounded-3 d-none" disabled>
                                 <span class="spinner-border spinner-border-sm me-2" role="status"></span>
@@ -866,6 +940,7 @@
 
         let videoStream = null;
         let capturedBlobs = [];
+        let studentFacingMode = "user";
 
         const steps = [
             "1/6: Nhìn thẳng trực diện",
@@ -876,21 +951,343 @@
             "6/6: Hơi cúi cằm XUỐNG"
         ];
 
+        function isFrontCameraTrack(track, preferredMode = "user") {
+            if (!track) return preferredMode === "user";
+            const s = track.getSettings ? track.getSettings() : {};
+            if (s.facingMode) {
+                return s.facingMode === 'user';
+            }
+            const lbl = (track.label || '').toLowerCase();
+            if (lbl.includes('front') || lbl.includes('user') || lbl.includes('trước') || lbl.includes('facetime') || lbl.includes('integrated')) {
+                return true;
+            }
+            if (lbl.includes('back') || lbl.includes('rear') || lbl.includes('sau') || lbl.includes('environment')) {
+                return false;
+            }
+            return preferredMode === "user";
+        }
+
+        function switchStudentCamera() {
+            if (isKycRunning) {
+                alert("Đang trong quá trình quét, vui lòng hoàn tất hoặc dừng trước khi đổi camera.");
+                return;
+            }
+            studentFacingMode = (studentFacingMode === "user") ? "environment" : "user";
+            stopCamera();
+            startCamera();
+        }
+
         function startCamera() {
             if (videoStream) return; 
-            navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false })
-                .then(stream => { 
-                    videoElement.srcObject = stream; 
-                    videoStream = stream; 
-                    updateFaceGuidePose(0);
-                })
-                .catch(err => { 
-                    showAlert("Hãy cho phép dùng Camera để định danh!", "danger"); 
-                    startBtn.disabled = true; 
+            navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: studentFacingMode,
+                    width:  { ideal: 1920 },
+                    height: { ideal: 1080 }
+                },
+                audio: false
+            })
+            .then(stream => { 
+                videoElement.srcObject = stream; 
+                videoStream = stream; 
+                const track = stream.getVideoTracks()[0];
+                const isFront = isFrontCameraTrack(track, studentFacingMode);
+                videoElement.style.transform = isFront ? 'scaleX(-1)' : 'scaleX(1)';
+                updateFaceGuidePose(0);
+            })
+            .catch(err => { 
+                showAlert("Hãy cho phép dùng Camera để định danh!", "danger"); 
+                startBtn.disabled = true; 
+            });
+        }
+
+        // ==========================================================
+        // CẤU HÌNH & XỬ LÝ MEDIAPIPE FACE ALIGNMENT TRÊN STUDENT DASHBOARD
+        // ==========================================================
+        let isKycRunning = false;
+        let currentKycSessionId = null; // Quản lý session ID của phiên eKYC (chống race condition)
+        let studentFaceDetector = null;
+        let isDetectorLoading = false;
+
+        // Canvas phụ offscreen dùng để phân tích độ sáng/độ nét/pose và crop ảnh gốc
+        const evalCanvas = document.createElement('canvas');
+        const evalCtx = evalCanvas.getContext('2d', { willReadFrequently: true });
+
+        // Canvas phụ chuyển đổi và resize khuôn mặt đúng 1 lần thành 160x160
+        const crop160Canvas = document.createElement('canvas');
+        crop160Canvas.width = 160;
+        crop160Canvas.height = 160;
+        const crop160Ctx = crop160Canvas.getContext('2d');
+        crop160Ctx.imageSmoothingEnabled = true;
+        crop160Ctx.imageSmoothingQuality = 'high';
+
+        function cropFaceTo160Blob(box, sourceCanvas) {
+            const padRatio = 0.15; // Padding 15% biên quanh mặt
+            const padX = box.width * padRatio;
+            const padY = box.height * padRatio;
+            const x1 = Math.max(0, Math.floor(box.originX - padX));
+            const y1 = Math.max(0, Math.floor(box.originY - padY));
+            const x2 = Math.min(sourceCanvas.width, Math.ceil(box.originX + box.width + padX));
+            const y2 = Math.min(sourceCanvas.height, Math.ceil(box.originY + box.height + padY));
+            const cropW = x2 - x1;
+            const cropH = y2 - y1;
+
+            if (cropW <= 0 || cropH <= 0) return Promise.resolve(null);
+
+            crop160Ctx.clearRect(0, 0, 160, 160);
+            crop160Ctx.drawImage(sourceCanvas, x1, y1, cropW, cropH, 0, 0, 160, 160);
+            return new Promise(resolve => crop160Canvas.toBlob(resolve, 'image/jpeg', 0.95));
+        }
+
+        async function verifySamePersonApi(stepIndex, cropBlob, referenceEmb) {
+            try {
+                const fd = new FormData();
+                fd.append('file', cropBlob, `step_${stepIndex}.jpg`);
+                fd.append('step_index', stepIndex.toString());
+                if (stepIndex > 0 && referenceEmb) {
+                    fd.append('ref_embedding_json', JSON.stringify(referenceEmb));
+                }
+                const res = await fetch('/api/ekyc/verify_reference', { method: 'POST', body: fd });
+                if (!res.ok) {
+                    return { success: false, isNetworkError: true, message: `Lỗi máy chủ (${res.status}). Vui lòng thử lại.` };
+                }
+                const data = await res.json();
+                return data;
+            } catch (e) {
+                console.warn("Lỗi xác thực danh tính:", e);
+                return { success: false, isNetworkError: true, message: "Lỗi kết nối kiểm tra danh tính. Vui lòng thử lại." };
+            }
+        }
+
+        async function ensureStudentFaceDetector() {
+            if (studentFaceDetector) return studentFaceDetector;
+            if (isDetectorLoading) {
+                while (isDetectorLoading) {
+                    await new Promise(r => setTimeout(r, 100));
+                }
+                return studentFaceDetector;
+            }
+            isDetectorLoading = true;
+            try {
+                const { FilesetResolver, FaceDetector } = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+                const fileset = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+                studentFaceDetector = await FaceDetector.createFromOptions(fileset, {
+                    baseOptions: { 
+                        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite", 
+                        delegate: "CPU" 
+                    },
+                    runningMode: "IMAGE",
+                    minDetectionConfidence: 0.45
                 });
+                return studentFaceDetector;
+            } catch (err) {
+                console.warn("Không tải được MediaPipe client trên trình duyệt:", err);
+                return null; // Fallback an toàn nếu môi trường offline
+            } finally {
+                isDetectorLoading = false;
+            }
+        }
+
+        // 1. Kiểm tra độ sáng vùng khuôn mặt (Luminance)
+        function checkFaceBrightness(ctx, box, canvasW, canvasH) {
+            const x = Math.max(0, Math.floor(box.originX));
+            const y = Math.max(0, Math.floor(box.originY));
+            const w = Math.min(canvasW - x, Math.floor(box.width));
+            const h = Math.min(canvasH - y, Math.floor(box.height));
+            if (w <= 0 || h <= 0) return { ok: true, lum: 128 };
+
+            const imgData = ctx.getImageData(x, y, w, h).data;
+            let totalLum = 0;
+            const step = 4 * 4; // Lấy mẫu cách mỗi 4 pixel (~0.2ms)
+            let count = 0;
+            for (let i = 0; i < imgData.length; i += step) {
+                totalLum += 0.299 * imgData[i] + 0.587 * imgData[i + 1] + 0.114 * imgData[i + 2];
+                count++;
+            }
+            const avgLum = count > 0 ? (totalLum / count) : 128;
+            if (avgLum < 40) {
+                return { ok: false, msg: "Ánh sáng đang yếu, hãy bật đèn hoặc di chuyển đến nơi sáng hơn", lum: avgLum };
+            }
+            if (avgLum > 225) {
+                return { ok: false, msg: "Ánh sáng quá mạnh, hãy giảm độ sáng hoặc tránh nguồn sáng trực tiếp", lum: avgLum };
+            }
+            return { ok: true, lum: avgLum };
+        }
+
+        // Helper: Tính trung vị (Median) của mảng số (xử lý an toàn khi mảng rỗng hoặc ít phần tử)
+        function computeMedian(arr) {
+            if (!arr || arr.length === 0) return 0;
+            const sorted = [...arr].sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            return sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+        }
+
+        // 2. Tính độ sắc nét thô (Average Absolute Luminance Gradient) trên vùng trung tâm khuôn mặt
+        function calculateFaceRawSharpness(ctx, box, canvasW, canvasH) {
+            const cx = Math.floor(box.originX + box.width / 2);
+            const cy = Math.floor(box.originY + box.height / 2);
+            // Chuẩn hóa kích thước vùng lấy mẫu thích ứng theo kích thước khuôn mặt (thay vì cố định 50px)
+            const faceMinDim = Math.min(box.width, box.height);
+            const sampleSize = Math.max(30, Math.min(100, Math.floor(faceMinDim * 0.4)));
+            const x = Math.max(0, cx - Math.floor(sampleSize / 2));
+            const y = Math.max(0, cy - Math.floor(sampleSize / 2));
+            const w = Math.min(canvasW - x, sampleSize);
+            const h = Math.min(canvasH - y, sampleSize);
+            if (w < 20 || h < 20) return 30;
+
+            const data = ctx.getImageData(x, y, w, h).data;
+            let gradSum = 0;
+            let count = 0;
+            for (let r = 0; r < h - 1; r++) {
+                for (let c = 0; c < w - 1; c++) {
+                    const idx = (r * w + c) * 4;
+                    const lum = data[idx] * 0.299 + data[idx+1] * 0.587 + data[idx+2] * 0.114;
+                    const lumR = data[idx + 4] * 0.299 + data[idx + 5] * 0.587 + data[idx + 6] * 0.114;
+                    const lumD = data[((r + 1) * w + c) * 4] * 0.299 + data[((r + 1) * w + c) * 4 + 1] * 0.587 + data[((r + 1) * w + c) * 4 + 2] * 0.114;
+                    gradSum += Math.abs(lumR - lum) + Math.abs(lumD - lum);
+                    count++;
+                }
+            }
+            return count > 0 ? (gradSum / count) : 30;
+        }
+
+        // Hàm kiểm tra độ rõ nét tương thích ngược (đơn lẻ 1 frame)
+        function checkFaceSharpness(ctx, box, canvasW, canvasH) {
+            const avgGrad = calculateFaceRawSharpness(ctx, box, canvasW, canvasH);
+            if (avgGrad < 4.5) {
+                return { ok: false, msg: "Ảnh đang bị mờ, hãy giữ đầu ổn định", score: avgGrad };
+            }
+            return { ok: true, score: avgGrad };
+        }
+
+        // 3. Kiểm tra cự ly, vị trí tâm và góc quay 6 tư thế
+        function checkFaceStepQuality(stepIndex, detection, canvasW, canvasH, isFront = true) {
+            const box = detection.boundingBox;
+            const kp = detection.keypoints || [];
+            const minSide = Math.min(canvasW, canvasH);
+            const faceSize = Math.max(box.width, box.height);
+            const sizeRatio = faceSize / minSide;
+
+            // Kiểm tra cự ly gần/xa
+            if (sizeRatio < 0.25) return { ok: false, msg: "Hãy tiến lại gần camera", status: "state-adjust" };
+            if (sizeRatio > 0.82) return { ok: false, msg: "Hãy lùi ra xa một chút", status: "state-adjust" };
+
+            // Kiểm tra căn tâm khung hình
+            const faceCenterX = box.originX + (box.width / 2);
+            const faceCenterY = box.originY + (box.height / 2);
+            const distX = (faceCenterX - (canvasW / 2)) / canvasW;
+            const distY = (faceCenterY - (canvasH / 2)) / canvasH;
+
+            if (Math.abs(distX) > 0.22) {
+                if (isFront) {
+                    return { ok: false, msg: distX > 0 ? "Hãy dịch mặt sang trái" : "Hãy dịch mặt sang phải", status: "state-adjust" };
+                } else {
+                    return { ok: false, msg: distX > 0 ? "Hãy dịch mặt sang phải" : "Hãy dịch mặt sang trái", status: "state-adjust" };
+                }
+            }
+            if (distY < -0.22) return { ok: false, msg: "Hãy hạ mặt xuống một chút", status: "state-adjust" };
+            if (distY > 0.22) return { ok: false, msg: "Hãy nâng mặt lên một chút", status: "state-adjust" };
+
+            // Kiểm tra tư thế theo từng bước từ 6 keypoints chuẩn của BlazeFace
+            if (kp.length >= 6) {
+                const re = kp[0], le = kp[1], nose = kp[2], mouth = kp[3];
+                const eyeDist = Math.hypot((le.x - re.x) * canvasW, (le.y - re.y) * canvasH);
+                const eyeMidX = ((re.x + le.x) / 2) * canvasW;
+                const eyeMidY = ((re.y + le.y) / 2) * canvasH;
+                const noseX = nose.x * canvasW;
+                const noseY = nose.y * canvasH;
+                const mouthY = mouth.y * canvasH;
+
+                const rawYawRatio = eyeDist > 0 ? (noseX - eyeMidX) / eyeDist : 0;
+                // Chuẩn hóa theo camera trước (mirrored) vs camera sau (unmirrored)
+                const yawRatio = isFront ? rawYawRatio : -rawYawRatio;
+
+                const distEyeNose = Math.max(1, noseY - eyeMidY);
+                const distNoseMouth = Math.max(1, mouthY - noseY);
+                const pitchRatio = distEyeNose / distNoseMouth;
+
+                if (stepIndex === 0 || stepIndex === 1) {
+                    if (Math.abs(yawRatio) > 0.20) {
+                        return { ok: false, msg: "Hãy nhìn thẳng trực diện vào camera", status: "state-adjust" };
+                    }
+                } else if (stepIndex === 2) {
+                    // Bước 3: Quay sang TRÁI (khoảng 30 độ)
+                    if (yawRatio > -0.08) {
+                        return { ok: false, msg: "Từ từ quay mặt sang TRÁI (khoảng 30°)", status: "state-adjust" };
+                    }
+                } else if (stepIndex === 3) {
+                    // Bước 4: Quay sang PHẢI (khoảng 30 độ)
+                    if (yawRatio < 0.08) {
+                        return { ok: false, msg: "Từ từ quay mặt sang PHẢI (khoảng 30°)", status: "state-adjust" };
+                    }
+                } else if (stepIndex === 4) {
+                    // Bước 5: Ngẩng cằm LÊN (khoảng 15 độ)
+                    if (pitchRatio > 0.80) {
+                        return { ok: false, msg: "Hơi ngước cằm LÊN một chút", status: "state-adjust" };
+                    }
+                } else if (stepIndex === 5) {
+                    // Bước 6: Cúi cằm XUỐNG (khoảng 15 độ)
+                    if (pitchRatio < 1.25) {
+                        return { ok: false, msg: "Hơi cúi cằm XUỐNG một chút", status: "state-adjust" };
+                    }
+                }
+            }
+
+            return { ok: true, msg: "Tư thế đạt chuẩn! Giữ yên...", status: "state-aligned" };
+        }
+
+        function updateStudentGuideUI(statusClass, labelText) {
+            const guide = document.getElementById('studentFaceGuide');
+            const card = document.getElementById('instructionCard');
+            const text = document.getElementById('instructionText');
+
+            // 1. Cập nhật màu của Silhouette SVG trên Camera
+            if (guide) {
+                guide.classList.remove('state-adjust', 'state-aligned');
+                if (statusClass === 'state-aligned') {
+                    guide.classList.add('state-aligned');
+                } else {
+                    guide.classList.add('state-adjust');
+                }
+            }
+
+            // 2. Cập nhật banner thông báo trạng thái hướng dẫn duy nhất bên dưới camera
+            if (card) {
+                card.classList.remove('state-adjust', 'state-aligned', 'state-warning', 'state-danger');
+                if (statusClass) card.classList.add(statusClass);
+            }
+            if (text && labelText) {
+                text.innerHTML = labelText;
+            }
+        }
+
+        // Cập nhật tiến trình phụ Sharpness Timeout 5 giây
+        function updateSharpnessTimeoutUI(remainingMs) {
+            const container = document.getElementById('sharpnessTimeoutContainer');
+            const bar = document.getElementById('timeoutProgressBar');
+            const countText = document.getElementById('timeoutCountText');
+            if (!container) return;
+
+            if (remainingMs === null) {
+                container.classList.add('d-none');
+                if (bar) bar.style.width = '0%';
+                return;
+            }
+
+            container.classList.remove('d-none');
+            const SHARPNESS_TIMEOUT_MS = 5000;
+            const elapsed = Math.max(0, SHARPNESS_TIMEOUT_MS - remainingMs);
+            const pct = Math.min(100, Math.round((elapsed / SHARPNESS_TIMEOUT_MS) * 100));
+            const sec = Math.max(1, Math.ceil(remainingMs / 1000));
+
+            if (bar) bar.style.width = `${pct}%`;
+            if (countText) countText.innerText = `${sec}s`;
         }
 
         function stopCamera() {
+            isKycRunning = false;
+            currentKycSessionId = null; // Hủy phiên hiện tại lập tức
+            updateSharpnessTimeoutUI(null);
             if (videoStream) {
                 videoStream.getTracks().forEach(track => track.stop());
                 videoElement.srcObject = null;
@@ -918,29 +1315,31 @@
             const svg = document.getElementById('studentSilhouetteSvg');
             const label = document.getElementById('studentPoseLabel');
             const guide = document.getElementById('studentFaceGuide');
-            if (guide) guide.classList.remove('d-none');
+            if (guide) {
+                guide.classList.remove('d-none', 'state-adjust', 'state-aligned');
+            }
             if (!svg) return;
 
             svg.classList.remove('pose-front', 'pose-smile', 'pose-left', 'pose-right', 'pose-up', 'pose-down');
             
             if (stepIndex === 0) {
                 svg.classList.add('pose-front');
-                if (label) label.innerHTML = '<i class="bi bi-person-fill"></i> 1/6: Nhìn thẳng trực diện';
+                if (label) label.innerHTML = '<i class="bi bi-person-fill me-1"></i> Góc 1/6: Nhìn thẳng trực diện';
             } else if (stepIndex === 1) {
                 svg.classList.add('pose-smile');
-                if (label) label.innerHTML = '<i class="bi bi-emoji-smile-fill"></i> 2/6: Mỉm cười thật tươi';
+                if (label) label.innerHTML = '<i class="bi bi-emoji-smile-fill me-1"></i> Góc 2/6: Mỉm cười thật tươi';
             } else if (stepIndex === 2) {
                 svg.classList.add('pose-left');
-                if (label) label.innerHTML = '<i class="bi bi-arrow-left-circle-fill"></i> 3/6: Quay sang TRÁI (30°)';
+                if (label) label.innerHTML = '<i class="bi bi-arrow-left-circle-fill me-1"></i> Góc 3/6: Quay sang TRÁI (30°)';
             } else if (stepIndex === 3) {
                 svg.classList.add('pose-right');
-                if (label) label.innerHTML = '<i class="bi bi-arrow-right-circle-fill"></i> 4/6: Quay sang PHẢI (30°)';
+                if (label) label.innerHTML = '<i class="bi bi-arrow-right-circle-fill me-1"></i> Góc 4/6: Quay sang PHẢI (30°)';
             } else if (stepIndex === 4) {
                 svg.classList.add('pose-up');
-                if (label) label.innerHTML = '<i class="bi bi-arrow-up-circle-fill"></i> 5/6: Hơi ngước cằm LÊN';
+                if (label) label.innerHTML = '<i class="bi bi-arrow-up-circle-fill me-1"></i> Góc 5/6: Hơi ngước cằm LÊN';
             } else if (stepIndex === 5) {
                 svg.classList.add('pose-down');
-                if (label) label.innerHTML = '<i class="bi bi-arrow-down-circle-fill"></i> 6/6: Hơi cúi cằm XUỐNG';
+                if (label) label.innerHTML = '<i class="bi bi-arrow-down-circle-fill me-1"></i> Góc 6/6: Hơi cúi cằm XUỐNG';
             }
         }
 
@@ -967,47 +1366,403 @@
         }
 
         startBtn.addEventListener('click', async () => {
+            // Nạp detector 1 lần duy nhất (có trạng thái loading rõ ràng)
+            startBtn.disabled = true;
+            const originalBtnHtml = startBtn.innerHTML;
+            startBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang khởi tạo AI...';
+            instructionText.innerText = "Đang khởi tạo AI căn chỉnh (1 lần duy nhất)...";
+
+            await ensureStudentFaceDetector();
+
+            startBtn.disabled = false;
+            startBtn.innerHTML = originalBtnHtml;
             startBtn.classList.add('d-none');
             camWrapper.classList.add('active');
             capturedBlobs = [];
+            isKycRunning = true;
             
-            canvas.width = videoElement.videoWidth || 480;
-            canvas.height = videoElement.videoHeight || 640;
+            // TẠO PHIÊN ĐĂNG KÝ eKYC MỚI (CHỐNG RACE CONDITION):
+            const thisSessionId = 'kyc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            currentKycSessionId = thisSessionId;
+            function isSessionValid() {
+                return isKycRunning && currentKycSessionId === thisSessionId;
+            }
+
+            let referenceEmbedding = null;
 
             for (let i = 0; i < steps.length; i++) {
-                // Cập nhật hình minh họa hướng mặt cho bước i
+                if (!isSessionValid()) break;
+
+                // Cập nhật hình minh họa và tên góc chụp cho bước i
                 updateFaceGuidePose(i);
 
-                instructionText.innerText = steps[i];
-                instructionText.className = "text-danger mb-2"; 
+                updateStudentGuideUI("state-adjust", `<i class="bi bi-person-bounding-box me-1"></i> ${steps[i]}`);
                 
                 progressBar.style.transition = 'none';
                 progressBar.style.width = '0%';
-                await new Promise(r => setTimeout(r, 50)); 
                 
-                progressBar.style.transition = 'width 2.5s linear';
-                progressBar.style.width = '100%';
-                
-                await new Promise(r => setTimeout(r, 2500));
-                
-                ctx.translate(canvas.width, 0);
-                ctx.scale(-1, 1);
-                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
-                ctx.setTransform(1, 0, 0, 1, 0, 0); 
+                // GIỚI HẠN SỐ LẦN RETRY XÁC MINH DANH TÍNH TẠI MỖI GÓC
+                const MAX_IDENTITY_RETRIES = 3;
+                let retryFailCount = 0;
 
-                let blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.95));
-                capturedBlobs.push(blob);
-                
-                // Đồng bộ hiệu ứng Flash TÁCH! ngay khi ảnh được tạo thành công
-                await triggerCaptureEffect();
+                // CƠ CHẾ ỔN ĐỊNH TỐI THIỂU 1000MS + COUNTDOWN 2 GIÂY TRỰC QUAN (2 -> 1 -> Chụp)
+                let stableStartTime = null;
+                let countdownStartTime = null;
 
-                camWrapper.style.borderColor = "#10b981";
-                instructionText.className = "text-success mb-2";
-                await new Promise(r => setTimeout(r, 300));
-                camWrapper.style.borderColor = "#2563eb";
+                // Cơ chế quản lý độ sắc nét theo thời gian (Rolling Window 5 frame + Median Filter + Hysteresis)
+                let sharpnessHistory = []; // Lưu tối đa 5 frame gần nhất
+                let isSharpState = false;  // Trạng thái hysteresis: false = chưa đạt, true = đang đạt
+                let sharpnessFailStartTime = null; // Mốc thời gian khi sharpness rớt chuẩn (để tính grace period)
+                let lastLoopTime = Date.now();
+                let lastSharpLogTime = 0;
+
+                // CẤU HÌNH SHARPNESS TIMEOUT FALLBACK (5 GIÂY)
+                const SHARPNESS_TIMEOUT_MS = 5000;
+                let sharpnessTimeoutStartTime = null; // Mốc bắt đầu chờ nét khi vị trí/tư thế/độ sáng đã hợp lệ
+                let isSharpnessFallbackActive = false; // Đã kích hoạt fallback 5s hay chưa
+                updateSharpnessTimeoutUI(null);
+
+                while (isSessionValid()) {
+                    if (!videoStream || !videoElement.videoWidth) {
+                        await new Promise(r => setTimeout(r, 150));
+                        continue;
+                    }
+
+                    const track = videoStream.getVideoTracks()[0];
+                    const isFront = isFrontCameraTrack(track, studentFacingMode);
+
+                    // Vẽ frame vào evalCanvas (với đúng 1 lần mirror nếu là camera trước)
+                    evalCanvas.width = videoElement.videoWidth;
+                    evalCanvas.height = videoElement.videoHeight;
+                    if (isFront) {
+                        evalCtx.translate(evalCanvas.width, 0);
+                        evalCtx.scale(-1, 1);
+                    }
+                    evalCtx.drawImage(videoElement, 0, 0);
+                    if (isFront) evalCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+                    if (!studentFaceDetector) {
+                        updateStudentGuideUI("state-adjust", '<span class="spinner-border spinner-border-sm me-2"></span> Đang tải mô hình nhận diện...');
+                        await new Promise(r => setTimeout(r, 200));
+                        continue;
+                    }
+
+                    let res = null;
+                    try {
+                        res = studentFaceDetector.detect(evalCanvas);
+                    } catch (e) {
+                        console.warn("Lỗi detect frame sinh viên:", e);
+                    }
+
+                    // Hàm phụ: reset thời gian ổn định và countdown khi phát hiện mất tracking hoặc di chuyển
+                    function resetStability(fallbackMsg, fallbackStatus = "state-adjust") {
+                        const isInterrupted = (stableStartTime !== null || countdownStartTime !== null);
+                        const msg = isInterrupted ? "Khuôn mặt không ổn định, vui lòng giữ yên" : fallbackMsg;
+                        const status = isInterrupted ? "state-danger" : fallbackStatus;
+
+                        stableStartTime = null;
+                        countdownStartTime = null;
+                        sharpnessFailStartTime = null;
+                        progressBar.style.transition = 'none';
+                        progressBar.style.width = '0%';
+                        updateStudentGuideUI(status, `<i class="bi bi-exclamation-circle me-1"></i> ${msg}`);
+                    }
+
+                    const now = Date.now();
+                    const frameDelta = Math.min(200, Math.max(10, now - lastLoopTime));
+                    lastLoopTime = now;
+
+                    // 1. Kiểm tra số lượng khuôn mặt
+                    if (!res || !res.detections || res.detections.length === 0) {
+                        sharpnessHistory = [];
+                        isSharpState = false;
+                        sharpnessTimeoutStartTime = null;
+                        isSharpnessFallbackActive = false;
+                        updateSharpnessTimeoutUI(null);
+                        resetStability("Đưa khuôn mặt vào khung tròn", "state-adjust");
+                        await new Promise(r => setTimeout(r, 100));
+                        continue;
+                    }
+                    if (res.detections.length > 1) {
+                        sharpnessHistory = [];
+                        isSharpState = false;
+                        sharpnessTimeoutStartTime = null;
+                        isSharpnessFallbackActive = false;
+                        updateSharpnessTimeoutUI(null);
+                        resetStability("Chỉ để một người trước camera", "state-adjust");
+                        await new Promise(r => setTimeout(r, 100));
+                        continue;
+                    }
+
+                    const det = res.detections[0];
+
+                    // 2. Kiểm tra độ sáng TRƯỚC (tránh nhầm lẫn thiếu sáng với ảnh mờ)
+                    const bright = checkFaceBrightness(evalCtx, det.boundingBox, evalCanvas.width, evalCanvas.height);
+                    if (!bright.ok) {
+                        sharpnessHistory = [];
+                        isSharpState = false;
+                        sharpnessTimeoutStartTime = null;
+                        isSharpnessFallbackActive = false;
+                        updateSharpnessTimeoutUI(null);
+                        resetStability(bright.msg, "state-adjust");
+                        await new Promise(r => setTimeout(r, 100));
+                        continue;
+                    }
+
+                    // 3. Kiểm tra vị trí, cự ly và góc xoay tư thế
+                    // (Ưu tiên kiểm tra trước độ nét: khi người dùng đang căn chỉnh tư thế, không báo ảnh mờ)
+                    const poseQuality = checkFaceStepQuality(i, det, evalCanvas.width, evalCanvas.height, isFront);
+                    if (!poseQuality.ok) {
+                        sharpnessHistory = [];
+                        isSharpState = false;
+                        sharpnessTimeoutStartTime = null;
+                        isSharpnessFallbackActive = false;
+                        updateSharpnessTimeoutUI(null);
+                        resetStability(`Điều chỉnh tư thế: ${poseQuality.msg}`, "state-adjust");
+                        await new Promise(r => setTimeout(r, 100));
+                        continue;
+                    }
+
+                    // 4. Kiểm tra độ sắc nét (chỉ khi đã vào đúng tư thế và đủ sáng)
+                    const rawScore = calculateFaceRawSharpness(evalCtx, det.boundingBox, evalCanvas.width, evalCanvas.height);
+                    
+                    // Thêm điểm vào rolling window 5 frame
+                    sharpnessHistory.push(rawScore);
+                    if (sharpnessHistory.length > 5) {
+                        sharpnessHistory.shift();
+                    }
+                    
+                    // Lọc bằng Median filter
+                    const filteredScore = computeMedian(sharpnessHistory);
+                    
+                    // Cơ chế Hysteresis:
+                    // Ngưỡng vào (Enter): 4.5 (giữ nguyên threshold hiện tại)
+                    // Ngưỡng thoát (Exit): 3.8 (thấp hơn ngưỡng vào một khoảng hợp lý để chống dao động)
+                    // Ngưỡng mờ nghiêm trọng: 2.5 (ảnh mờ rõ rệt do rung lắc mạnh)
+                    const SHARP_ENTER_THRESHOLD = 4.5;
+                    const SHARP_EXIT_THRESHOLD = 3.8;
+                    const SHARP_SEVERE_BLUR = 2.5;
+
+                    if (!isSharpState) {
+                        if (filteredScore >= SHARP_ENTER_THRESHOLD) {
+                            isSharpState = true;
+                        }
+                    } else {
+                        if (filteredScore < SHARP_EXIT_THRESHOLD || rawScore < SHARP_SEVERE_BLUR) {
+                            isSharpState = false;
+                        }
+                    }
+
+                    // Debug log để theo dõi giá trị thực tế trên webcam console (F12)
+                    if (now - lastSharpLogTime > 400) {
+                        lastSharpLogTime = now;
+                        console.debug(`[eKYC Sharpness] Raw: ${rawScore.toFixed(2)}, Median: ${filteredScore.toFixed(2)} (n=${sharpnessHistory.length}), State: ${isSharpState ? 'ĐẠT' : 'MỜ'}, Timeout: ${sharpnessTimeoutStartTime ? ((now - sharpnessTimeoutStartTime)/1000).toFixed(1) + 's' : 'OFF'}, Fallback: ${isSharpnessFallbackActive}`);
+                    }
+
+                    // XỬ LÝ ĐỘ NÉT VÀ SHARPNESS TIMEOUT FALLBACK
+                    if (isSharpState) {
+                        // Độ nét tự nhiên ĐẠT CHUẨN:
+                        // Hủy fallback timer nếu có và xóa grace period
+                        sharpnessTimeoutStartTime = null;
+                        isSharpnessFallbackActive = false;
+                        sharpnessFailStartTime = null;
+                        updateSharpnessTimeoutUI(null);
+                    } else {
+                        // Độ nét CHƯA ĐẠT CHUẨN:
+                        // Nếu chưa kích hoạt fallback, kiểm tra bộ đếm 5 giây
+                        if (!isSharpnessFallbackActive) {
+                            if (sharpnessTimeoutStartTime === null) {
+                                sharpnessTimeoutStartTime = now;
+                            }
+                            const waitDuration = now - sharpnessTimeoutStartTime;
+
+                            if (waitDuration < SHARPNESS_TIMEOUT_MS) {
+                                // Đang trong thời gian chờ 5s:
+                                const remainingMs = SHARPNESS_TIMEOUT_MS - waitDuration;
+                                const remainingSec = Math.max(1, Math.ceil(remainingMs / 1000));
+
+                                // Cập nhật thanh tiến trình phụ chờ độ nét
+                                updateSharpnessTimeoutUI(remainingMs);
+
+                                // Reset stability và countdown vì độ nét chưa đạt và chưa hết 5s
+                                stableStartTime = null;
+                                countdownStartTime = null;
+                                progressBar.style.transition = 'none';
+                                progressBar.style.width = '0%';
+
+                                updateStudentGuideUI("state-adjust", `<i class="bi bi-hourglass-split me-1"></i> Khuôn mặt đã đúng vị trí. Đang chờ độ nét (${remainingSec}s)...`);
+                                await new Promise(r => setTimeout(r, 80));
+                                continue;
+                            } else {
+                                // ĐÃ CHỜ ĐỦ 5 GIÂY: Kích hoạt Sharpness Timeout Fallback!
+                                isSharpnessFallbackActive = true;
+                                updateSharpnessTimeoutUI(null);
+                                console.warn("[eKYC] Sharpness Timeout 5000ms đạt. Kích hoạt fallback cho phép tiếp tục quy trình chụp.");
+                            }
+                        }
+                    }
+
+                    // 5. TOÀN BỘ ĐIỀU KIỆN ĐẠT CHUẨN (HOẶC ĐÃ KÍCH HOẠT SHARPNESS TIMEOUT FALLBACK)!
+                    // Khởi tạo mốc thời gian bắt đầu giữ ổn định
+                    if (stableStartTime === null) {
+                        stableStartTime = now;
+                        countdownStartTime = null;
+                        const msg = isSharpnessFallbackActive
+                            ? '<i class="bi bi-shield-check me-1"></i> Giữ yên khuôn mặt (cho phép chụp sau 5s chờ nét)'
+                            : '<i class="bi bi-shield-check me-1"></i> Đang kiểm tra chất lượng';
+                        updateStudentGuideUI("state-aligned", msg);
+                        progressBar.style.transition = 'none';
+                        progressBar.style.width = '5%';
+                        await new Promise(r => setTimeout(r, 80));
+                        continue;
+                    }
+
+                    const stableElapsed = now - stableStartTime;
+                    const STABLE_REQUIRED_MS = 1000; // Khuôn mặt phải giữ ổn định liên tục tối thiểu 1000ms
+
+                    if (stableElapsed < STABLE_REQUIRED_MS) {
+                        // Đang trong giai đoạn giữ yên 1000ms
+                        const pct = Math.min(30, Math.round((stableElapsed / STABLE_REQUIRED_MS) * 30));
+                        progressBar.style.transition = 'width 0.08s linear';
+                        progressBar.style.width = `${pct}%`;
+                        const msg = isSharpnessFallbackActive
+                            ? '<i class="bi bi-person-check-fill me-1"></i> Giữ yên khuôn mặt (cho phép chụp sau 5s)'
+                            : '<i class="bi bi-person-check-fill me-1"></i> Giữ yên khuôn mặt';
+                        updateStudentGuideUI("state-aligned", msg);
+                        await new Promise(r => setTimeout(r, 80));
+                        continue;
+                    }
+
+                    // Đã ổn định đủ >= 1000ms: Bắt đầu Countdown 2 giây trực quan (2 -> 1 -> Chụp)
+                    const COUNTDOWN_TOTAL_MS = 2000;
+                    if (countdownStartTime === null) {
+                        countdownStartTime = now;
+                    }
+
+                    const countdownElapsed = now - countdownStartTime;
+                    const remainingMs = COUNTDOWN_TOTAL_MS - countdownElapsed;
+
+                    if (remainingMs > 1000) {
+                        // Giây thứ 2
+                        const pct = 30 + Math.round((countdownElapsed / COUNTDOWN_TOTAL_MS) * 70);
+                        progressBar.style.transition = 'width 0.08s linear';
+                        progressBar.style.width = `${pct}%`;
+                        updateStudentGuideUI("state-aligned", '<i class="bi bi-stopwatch-fill me-1"></i> Chuẩn bị chụp: 2');
+                        await new Promise(r => setTimeout(r, 80));
+                        continue;
+                    } else if (remainingMs > 0) {
+                        // Giây thứ 1
+                        const pct = 30 + Math.round((countdownElapsed / COUNTDOWN_TOTAL_MS) * 70);
+                        progressBar.style.transition = 'width 0.08s linear';
+                        progressBar.style.width = `${pct}%`;
+                        updateStudentGuideUI("state-aligned", '<i class="bi bi-stopwatch-fill me-1"></i> Chuẩn bị chụp: 1');
+                        await new Promise(r => setTimeout(r, 80));
+                        continue;
+                    }
+
+                    // Countdown kết thúc: Kiểm tra bảo hiểm chất lượng ảnh trước khi bấm chụp
+                    // Nếu không dùng fallback mà bị mờ thì không chụp
+                    if (!isSharpState && !isSharpnessFallbackActive) {
+                        resetStability("Ảnh đang bị mờ, hãy giữ đầu ổn định", "state-adjust");
+                        await new Promise(r => setTimeout(r, 80));
+                        continue;
+                    }
+
+                    // Toàn bộ điều kiện vẫn liên tục đạt -> Chụp ảnh!
+                    progressBar.style.width = '100%';
+                    updateStudentGuideUI("state-aligned", '<i class="bi bi-camera-fill me-1"></i> Đang chụp ảnh');
+
+                    // Cắt crop 160x160 trực tiếp từ ảnh gốc
+                    const cropBlob = await cropFaceTo160Blob(det.boundingBox, evalCanvas);
+                    if (!isSessionValid()) return;
+                    if (!cropBlob) {
+                        stableStartTime = null;
+                        countdownStartTime = null;
+                        progressBar.style.width = '0%';
+                        await new Promise(r => setTimeout(r, 100));
+                        continue;
+                    }
+
+                    // Xác minh cùng một người với InceptionResnetV1 Cosine Similarity >= 0.70
+                    updateStudentGuideUI("state-aligned", '<i class="bi bi-shield-lock-fill me-1"></i> Đang xác thực sinh trắc học...');
+                    const verifyRes = await verifySamePersonApi(i, cropBlob, referenceEmbedding);
+                    
+                    // CHỐNG RACE CONDITION: Sau await verifySamePersonApi, kiểm tra phiên còn hợp lệ không
+                    if (!isSessionValid()) {
+                        console.warn(`[eKYC] Phiên ${thisSessionId} đã bị hủy hoặc thay thế sau khi gọi API. Dừng xử lý.`);
+                        return;
+                    }
+
+                    if (verifyRes.success) {
+                        if (i === 0 && verifyRes.embedding) {
+                            referenceEmbedding = verifyRes.embedding;
+                        }
+                        // Chụp thành công đúng 1 lần cho tư thế này
+                        capturedBlobs.push(cropBlob);
+                        await triggerCaptureEffect();
+                        if (!isSessionValid()) return;
+
+                        camWrapper.style.borderColor = "#10b981";
+                        updateStudentGuideUI("state-aligned", `<i class="bi bi-check-all me-1"></i> Đã chụp tư thế ${i + 1}/6`);
+                        await new Promise(r => setTimeout(r, 600));
+                        if (!isSessionValid()) return;
+
+                        camWrapper.style.borderColor = "#2563eb";
+                        break; // Khóa tư thế i, thoát while để chuyển tư thế tiếp theo!
+                    } else {
+                        // Xác định xem có phải lỗi không khớp danh tính thực sự hay lỗi kết nối/máy chủ
+                        const isIdentityMismatch = !verifyRes.isNetworkError && (
+                            verifyRes.similarity !== undefined || 
+                            (verifyRes.message && verifyRes.message.includes("không khớp"))
+                        );
+
+                        if (isIdentityMismatch) {
+                            retryFailCount++;
+                        }
+
+                        // Nếu thất bại lần 3: Dừng phiên an toàn
+                        if (retryFailCount >= MAX_IDENTITY_RETRIES) {
+                            console.warn(`[eKYC] Góc ${i + 1} xác minh thất bại ${retryFailCount}/${MAX_IDENTITY_RETRIES} lần. Dừng phiên.`);
+                            updateStudentGuideUI("state-danger", '<i class="bi bi-x-octagon-fill me-1"></i> Xác minh khuôn mặt không thành công sau 3 lần. Vui lòng bắt đầu lại quá trình đăng ký.');
+                            progressBar.style.width = '0%';
+                            stopCamera();
+                            startBtn.classList.remove('d-none');
+                            camWrapper.classList.remove('active');
+                            return;
+                        }
+
+                        // Nếu thất bại lần 1 hoặc 2 (hoặc lỗi mạng):
+                        // 1. Không lưu cropBlob vào capturedBlobs
+                        // 2. Reset countdown và stability (bắt buộc trải qua lại 1000ms ổn định và 2000ms countdown)
+                        stableStartTime = null;
+                        countdownStartTime = null;
+                        progressBar.style.transition = 'none';
+                        progressBar.style.width = '0%';
+
+                        // 3. Xử lý Sharpness Fallback sau khi xác minh thất bại:
+                        sharpnessTimeoutStartTime = null;
+                        isSharpnessFallbackActive = false;
+                        sharpnessHistory = [];
+                        isSharpState = false;
+                        updateSharpnessTimeoutUI(null);
+
+                        // 4. Hiển thị thông báo thất bại rõ ràng
+                        let failMsg = verifyRes.message || "Khuôn mặt không khớp với ảnh tham chiếu. Vui lòng sử dụng cùng một người.";
+                        if (isIdentityMismatch) {
+                            failMsg = `Xác minh không khớp (Lần ${retryFailCount}/${MAX_IDENTITY_RETRIES}). Vui lòng giữ yên đúng tư thế.`;
+                        }
+                        updateStudentGuideUI("state-danger", `<i class="bi bi-person-x-fill me-1"></i> ${failMsg}`);
+
+                        await new Promise(r => setTimeout(r, 1500));
+                        if (!isSessionValid()) return;
+                        continue;
+                    }
+                }
             }
 
-            instructionText.innerText = "Hoàn tất! Đang xử lý...";
+            if (!isSessionValid()) return;
+
+            instructionText.innerText = "Hoàn tất 6 góc! Đang đồng bộ Face Bank...";
             camWrapper.classList.remove('active');
             uploadingBtn.classList.remove('d-none');
             
