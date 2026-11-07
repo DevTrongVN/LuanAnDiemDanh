@@ -941,6 +941,28 @@
         let videoStream = null;
         let capturedBlobs = [];
         let studentFacingMode = "user";
+        let studentDeviceId = null;
+        let isSwitchingStudentCamera = false;
+
+        function isMobileDevice() {
+            const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
+            const isMobileUA = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua);
+            const hasTouch = (navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
+            return isMobileUA || (hasTouch && /macintosh/i.test(ua));
+        }
+
+        async function getAvailableVideoInputs() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                    return [];
+                }
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                return devices.filter(d => d.kind === 'videoinput');
+            } catch (e) {
+                console.warn("[eKYC Camera] Lỗi enumerateDevices:", e);
+                return [];
+            }
+        }
 
         const steps = [
             "1/6: Nhìn thẳng trực diện",
@@ -967,38 +989,274 @@
             return preferredMode === "user";
         }
 
-        function switchStudentCamera() {
+        function formatStudentCameraError(err) {
+            if (!err) return "Không thể bật camera. Vui lòng thử lại.";
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                return "Quyền truy cập Camera bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt để định danh!";
+            }
+            if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                return "Camera đang bận hoặc bị ứng dụng / tab khác chiếm giữ. Vui lòng đóng các ứng dụng khác và thử lại!";
+            }
+            if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                return "Không tìm thấy camera phù hợp trên thiết bị!";
+            }
+            if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
+                return "Cấu hình độ phân giải camera không được hỗ trợ!";
+            }
+            if (err.message && err.message.includes("Timeout")) {
+                return "Camera đã kết nối nhưng không phát hình ảnh (frame rỗng). Vui lòng thử lại!";
+            }
+            return `Không thể bật camera (${err.name || "Lỗi thiết bị"}: ${err.message || "Không xác định"}). Vui lòng kiểm tra quyền hoặc tải lại trang!`;
+        }
+
+        async function acquireStudentStreamWithFallback(targetMode, targetDeviceId = null) {
+            // Nếu có targetDeviceId cụ thể (khi chuyển đổi webcam trên Desktop có nhiều camera):
+            if (targetDeviceId) {
+                try {
+                    console.log(`[eKYC Camera] Thử getUserMedia theo deviceId: ${targetDeviceId}...`);
+                    return await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            deviceId: { exact: targetDeviceId },
+                            width:  { ideal: 1280 },
+                            height: { ideal: 720 }
+                        },
+                        audio: false
+                    });
+                } catch (devErr1) {
+                    console.warn(`[eKYC Camera] Mở theo deviceId thất bại (${devErr1.name}). Thử native resolution...`);
+                    await new Promise(r => setTimeout(r, 150));
+                    return await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            deviceId: { exact: targetDeviceId }
+                        },
+                        audio: false
+                    });
+                }
+            }
+
+            // Cấu hình 1: Ưu tiên 720p ideal (1280x720) với facingMode mong muốn (ổn định hơn cho camera trước di động hoặc webcam HD)
+            try {
+                console.log(`[eKYC Camera] Thử getUserMedia (Cấu hình 1: ideal 720p, facingMode=${targetMode})...`);
+                return await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: { ideal: targetMode },
+                        width:  { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
+            } catch (err1) {
+                console.warn(`[eKYC Camera] Cấu hình 1 không khả dụng (${err1.name}: ${err1.message}). Thử cấu hình 2...`);
+                await new Promise(r => setTimeout(r, 150));
+            }
+
+            // Cấu hình 2: 1080p ideal
+            try {
+                console.log(`[eKYC Camera] Thử getUserMedia (Cấu hình 2: ideal 1080p, facingMode=${targetMode})...`);
+                return await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: { ideal: targetMode },
+                        width:  { ideal: 1920 },
+                        height: { ideal: 1080 }
+                    },
+                    audio: false
+                });
+            } catch (err2) {
+                console.warn(`[eKYC Camera] Cấu hình 2 không khả dụng (${err2.name}: ${err2.message}). Thử cấu hình 3...`);
+                await new Promise(r => setTimeout(r, 150));
+            }
+
+            // Cấu hình 3: Không ràng buộc độ phân giải, nhưng BẮT BUỘC giữ facingMode (KHÔNG dùng video: true vô điều kiện)
+            console.log(`[eKYC Camera] Thử getUserMedia (Cấu hình 3: native resolution, facingMode=${targetMode})...`);
+            return await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: targetMode }
+                },
+                audio: false
+            });
+        }
+
+        async function startCamera(targetFacingMode = studentFacingMode, isRollback = false, targetDeviceId = null) {
+            console.log(`[eKYC Camera] Khởi tạo camera (mục tiêu=${targetFacingMode}, rollback=${isRollback}, deviceId=${targetDeviceId})...`);
+            if (videoStream) {
+                await stopCamera(350);
+            }
+
+            if (!videoElement) {
+                throw new Error("Không tìm thấy phần tử video hiển thị camera (webcam).");
+            }
+
+            let stream = null;
+
+            try {
+                stream = await acquireStudentStreamWithFallback(targetFacingMode, targetDeviceId);
+                videoStream = stream;
+                videoElement.srcObject = stream;
+                videoElement.muted = true;
+                videoElement.setAttribute('playsinline', '');
+                videoElement.setAttribute('autoplay', '');
+
+                // Gọi video.play() rõ ràng, bắt và ném lỗi nếu không thể phát (chặn autoplay giả)
+                try {
+                    await videoElement.play();
+                } catch (playErr) {
+                    console.error(`[eKYC Camera] video.play() thất bại:`, playErr);
+                    throw new Error(`Trình duyệt không thể phát luồng video (${playErr.name || "PlayError"}: ${playErr.message || "Bị chặn autoplay"}).`);
+                }
+
+                // Chờ frame dữ liệu thực tế (videoWidth > 0 và readyState >= 2) có timeout rõ ràng
+                await new Promise((resolve, reject) => {
+                    const startTime = Date.now();
+                    const checkFrame = () => {
+                        if (videoElement.readyState >= 2 && videoElement.videoWidth > 0 && videoElement.videoHeight > 0) {
+                            resolve();
+                        } else if (Date.now() - startTime > 2500) {
+                            reject(new Error("Timeout: Camera đã mở nhưng không nhận được khung hình (frame rỗng)."));
+                        } else {
+                            requestAnimationFrame(checkFrame);
+                        }
+                    };
+                    checkFrame();
+                });
+
+                // Xác minh hướng camera thực tế từ phần cứng
+                const track = stream.getVideoTracks()[0];
+                const settings = track.getSettings ? track.getSettings() : {};
+                studentDeviceId = settings.deviceId || targetDeviceId || null;
+
+                const isFront = isFrontCameraTrack(track, targetFacingMode);
+                const actualFacing = isFront ? "user" : "environment";
+                studentFacingMode = actualFacing;
+                videoElement.style.transform = isFront ? 'scaleX(-1)' : 'scaleX(1)';
+                updateFaceGuidePose(0);
+                if (startBtn) startBtn.disabled = false;
+                console.log(`[eKYC Camera] Camera sẵn sàng: actualFacing=${actualFacing}, targetFacingMode=${targetFacingMode}, deviceId=${studentDeviceId}, label="${track ? track.label : 'N/A'}", isFront=${isFront}`);
+
+                // Kiểm tra ràng buộc hướng camera:
+                // CHỈ áp dụng trên Mobile (nơi có cảm biến trước/sau tách biệt)
+                // và khi không chỉ định deviceId cụ thể, không trong quá trình rollback
+                const isMobile = isMobileDevice();
+                if (isMobile && actualFacing !== targetFacingMode && !isRollback && !targetDeviceId) {
+                    throw new Error(`Không thể mở đúng camera ${targetFacingMode === "user" ? "trước" : "sau"}. Phần cứng trả về camera ${actualFacing === "user" ? "trước" : "sau"}.`);
+                }
+
+                return true;
+            } catch (err) {
+                console.error(`[eKYC Camera] Lỗi khởi tạo camera (${err.name}: ${err.message}):`, err);
+                if (stream) {
+                    try { stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+                }
+                if (videoStream === stream) videoStream = null;
+                if (videoElement) videoElement.srcObject = null;
+                if (startBtn) startBtn.disabled = true;
+
+                if (!isRollback) {
+                    throw err; // Ném lỗi để switchStudentCamera xử lý rollback
+                }
+                showAlert(formatStudentCameraError(err), "danger");
+                return false;
+            }
+        }
+
+        async function switchStudentCamera() {
             if (isKycRunning) {
                 alert("Đang trong quá trình quét, vui lòng hoàn tất hoặc dừng trước khi đổi camera.");
                 return;
             }
-            studentFacingMode = (studentFacingMode === "user") ? "environment" : "user";
-            stopCamera();
-            startCamera();
-        }
+            if (isSwitchingStudentCamera) {
+                console.log("[eKYC Camera] Đang thực hiện chuyển đổi camera, bỏ qua lần nhấn này.");
+                return;
+            }
 
-        function startCamera() {
-            if (videoStream) return; 
-            navigator.mediaDevices.getUserMedia({
-                video: {
-                    facingMode: studentFacingMode,
-                    width:  { ideal: 1920 },
-                    height: { ideal: 1080 }
-                },
-                audio: false
-            })
-            .then(stream => { 
-                videoElement.srcObject = stream; 
-                videoStream = stream; 
-                const track = stream.getVideoTracks()[0];
-                const isFront = isFrontCameraTrack(track, studentFacingMode);
-                videoElement.style.transform = isFront ? 'scaleX(-1)' : 'scaleX(1)';
-                updateFaceGuidePose(0);
-            })
-            .catch(err => { 
-                showAlert("Hãy cho phép dùng Camera để định danh!", "danger"); 
-                startBtn.disabled = true; 
-            });
+            const isMobile = isMobileDevice();
+            const videoDevices = await getAvailableVideoInputs();
+
+            // Nếu trên Desktop và chỉ có 1 webcam: hiển thị thông báo rõ ràng, KHÔNG dừng webcam hiện tại
+            if (!isMobile && videoDevices.length === 1) {
+                showAlert("Thiết bị hiện tại chỉ có một webcam, không hỗ trợ chuyển sang camera khác.", "info");
+                return;
+            }
+
+            const switchBtn = document.getElementById('switchStudentCamBtn');
+            isSwitchingStudentCamera = true;
+            if (switchBtn) {
+                switchBtn.disabled = true;
+                switchBtn.classList.add('disabled');
+            }
+
+            // Kịch bản A: Trên Desktop có nhiều webcam -> Chuyển theo deviceId
+            if (!isMobile && videoDevices.length > 1) {
+                const currentIndex = videoDevices.findIndex(d => d.deviceId === studentDeviceId);
+                const nextDevice = videoDevices[(currentIndex + 1) % videoDevices.length];
+                const nextDeviceId = nextDevice ? nextDevice.deviceId : null;
+                const previousDeviceId = studentDeviceId;
+                console.log(`[eKYC Camera] Desktop chuyển webcam: ${studentDeviceId} -> ${nextDeviceId} (${nextDevice ? nextDevice.label : ''})`);
+
+                try {
+                    await stopCamera(350);
+                    await startCamera(studentFacingMode, false, nextDeviceId);
+                    console.log("[eKYC Camera] Chuyển đổi webcam Desktop thành công.");
+                } catch (switchErr) {
+                    console.error("[eKYC Camera] Chuyển webcam Desktop thất bại. Bắt đầu Rollback...", switchErr);
+                    try {
+                        await stopCamera(350);
+                        const rollbackOk = await startCamera(studentFacingMode, true, previousDeviceId);
+                        if (rollbackOk) {
+                            showAlert(`Không thể chuyển sang webcam tiếp theo (${switchErr.name || "Lỗi phần cứng"}). Đã khôi phục lại webcam ban đầu!`, "warning");
+                        } else {
+                            throw new Error("Rollback failed");
+                        }
+                    } catch (rollbackErr) {
+                        console.error("[eKYC Camera] Rollback thất bại hoàn toàn:", rollbackErr);
+                        await stopCamera(0);
+                        showAlert(formatStudentCameraError(switchErr), "danger");
+                    }
+                } finally {
+                    isSwitchingStudentCamera = false;
+                    if (switchBtn) {
+                        switchBtn.disabled = false;
+                        switchBtn.classList.remove('disabled');
+                    }
+                }
+                return;
+            }
+
+            // Kịch bản B: Trên Mobile (Android / iOS) -> Giữ nguyên chuyển đổi user <-> environment
+            const previousMode = studentFacingMode;
+            const targetMode = (previousMode === "user") ? "environment" : "user";
+            console.log(`[eKYC Camera] Yêu cầu chuyển camera: ${previousMode} -> ${targetMode}`);
+
+            try {
+                // 1. Dừng an toàn camera hiện tại và chờ giải phóng phần cứng
+                await stopCamera(350);
+
+                // 2. Thử khởi tạo camera mới
+                await startCamera(targetMode, false);
+                console.log(`[eKYC Camera] Chuyển đổi thành công sang camera ${targetMode}.`);
+            } catch (switchErr) {
+                console.error(`[eKYC Camera] Chuyển sang camera ${targetMode} thất bại (${switchErr.name}: ${switchErr.message}). Bắt đầu Rollback về ${previousMode}...`);
+                try {
+                    await stopCamera(350);
+                    const rollbackOk = await startCamera(previousMode, true);
+                    if (rollbackOk) {
+                        console.log(`[eKYC Camera] Rollback về ${previousMode} thành công.`);
+                        showAlert(`Không thể chuyển sang camera ${targetMode === "user" ? "trước" : "sau"} (${switchErr.name || "Lỗi phần cứng"}). Đã khôi phục lại camera ban đầu!`, "warning");
+                    } else {
+                        throw new Error("Rollback failed");
+                    }
+                } catch (rollbackErr) {
+                    console.error("[eKYC Camera] Rollback thất bại hoàn toàn:", rollbackErr);
+                    studentFacingMode = previousMode;
+                    await stopCamera(0);
+                    showAlert(formatStudentCameraError(switchErr), "danger");
+                }
+            } finally {
+                isSwitchingStudentCamera = false;
+                if (switchBtn) {
+                    switchBtn.disabled = false;
+                    switchBtn.classList.remove('disabled');
+                }
+            }
         }
 
         // ==========================================================
@@ -1284,30 +1542,61 @@
             if (countText) countText.innerText = `${sec}s`;
         }
 
-        function stopCamera() {
+        async function stopCamera(waitMs = 350) {
             isKycRunning = false;
             currentKycSessionId = null; // Hủy phiên hiện tại lập tức
             updateSharpnessTimeoutUI(null);
-            if (videoStream) {
-                videoStream.getTracks().forEach(track => track.stop());
+            if (videoElement) {
+                try { videoElement.pause(); } catch (e) {}
                 videoElement.srcObject = null;
+            }
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => {
+                    try { track.stop(); } catch (e) {}
+                });
                 videoStream = null;
+            }
+            if (waitMs > 0) {
+                await new Promise(r => setTimeout(r, waitMs));
             }
         }
 
-        function toggleCameraForm() {
+        async function toggleCameraForm() {
             kycFormArea.classList.toggle('d-none');
             const noticeBox = document.getElementById('registeredNoticeBox');
             if (noticeBox) noticeBox.classList.toggle('d-none');
             if (!kycFormArea.classList.contains('d-none')) {
-                startCamera(); 
+                try {
+                    await startCamera();
+                } catch (e) {
+                    showAlert(formatStudentCameraError(e), "danger");
+                }
             } else {
-                stopCamera(); 
+                await stopCamera(0);
             }
         }
 
         if (!kycFormArea.classList.contains('d-none')) {
-            startCamera();
+            startCamera().catch(e => {
+                showAlert(formatStudentCameraError(e), "danger");
+            });
+        }
+
+        // Dọn dẹp tài nguyên camera khi trang bị unload hoặc đăng xuất
+        window.addEventListener('pagehide', () => {
+            if (videoStream) {
+                videoStream.getTracks().forEach(track => { try { track.stop(); } catch(e){} });
+                videoStream = null;
+            }
+        });
+        const studentLogoutForm = document.querySelector('form[action="/logout"]');
+        if (studentLogoutForm) {
+            studentLogoutForm.addEventListener('submit', () => {
+                if (videoStream) {
+                    videoStream.getTracks().forEach(track => { try { track.stop(); } catch(e){} });
+                    videoStream = null;
+                }
+            });
         }
 
         // Hàm cập nhật trạng thái hướng silhouette theo đúng góc chụp của từng bước
@@ -1833,7 +2122,9 @@
             instructionText.className = "text-primary mb-2";
             progressBar.style.width = '0%';
             updateFaceGuidePose(0);
-            startCamera(); 
+            startCamera().catch(e => {
+                showAlert(formatStudentCameraError(e), "danger");
+            });
         }
 
         function showAlert(msg, type) { 

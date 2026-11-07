@@ -1585,8 +1585,31 @@
         let liveStream = null;
         let isRealtimeRunning = false;
         let realtimeTimer = null;
-        let currentFacingMode = "environment";
+        let currentDeviceId = null;
         let isSendingFrame = false;
+        let isSwitchingCamera = false;
+
+        function isMobileDevice() {
+            const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
+            const isMobileUA = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile/i.test(ua);
+            const hasTouch = (navigator.maxTouchPoints && navigator.maxTouchPoints > 1);
+            return isMobileUA || (hasTouch && /macintosh/i.test(ua));
+        }
+
+        let currentFacingMode = isMobileDevice() ? "environment" : "user";
+
+        async function getAvailableVideoInputs() {
+            try {
+                if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                    return [];
+                }
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                return devices.filter(d => d.kind === 'videoinput');
+            } catch (e) {
+                console.warn("[Camera] Lỗi enumerateDevices:", e);
+                return [];
+            }
+        }
 
         function isFrontCameraTrack(track, preferredMode = "environment") {
             if (!track) return preferredMode === "user";
@@ -1640,48 +1663,334 @@
             }
         }
 
-        async function startWebcam() {
-            if (liveStream) stopWebcam();
+        function formatTeacherCameraError(err) {
+            if (!err) return "Không thể bật camera. Vui lòng thử lại.";
+            if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+                return "Quyền truy cập Camera bị từ chối. Vui lòng cấp quyền trong cài đặt trình duyệt để tiếp tục!";
+            }
+            if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+                return "Camera đang bận hoặc bị ứng dụng / tab khác chiếm giữ. Vui lòng đóng các ứng dụng khác và thử lại!";
+            }
+            if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+                return "Không tìm thấy camera phù hợp trên thiết bị!";
+            }
+            if (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError') {
+                return "Cấu hình độ phân giải camera không được thiết bị hỗ trợ!";
+            }
+            if (err.message && err.message.includes("Timeout")) {
+                return "Camera đã kết nối nhưng không phát hình ảnh (frame rỗng). Vui lòng thử lại!";
+            }
+            return `Không thể bật camera (${err.name || "Lỗi thiết bị"}: ${err.message || "Lỗi không xác định"}). Vui lòng kiểm tra quyền truy cập camera!`;
+        }
+
+        async function stopWebcam(waitMs = 350) {
+            console.log("[Camera] Yêu cầu dừng webcam hiện tại...");
+            const videoEl = document.getElementById('webcamLive');
+            if (videoEl) {
+                try { videoEl.pause(); } catch (e) {}
+                videoEl.srcObject = null;
+            }
+            if (liveStream) {
+                liveStream.getTracks().forEach(t => {
+                    console.log(`[Camera] Dừng track: ${t.kind} (label="${t.label}", readyState=${t.readyState})`);
+                    try { t.stop(); } catch (e) {}
+                });
+                liveStream = null;
+            }
+            const guide = document.getElementById('realtimeFaceGuide');
+            if (guide) guide.classList.add('d-none');
+
+            if (waitMs > 0) {
+                // Chờ phần cứng camera (Android Camera2 HAL / iOS AVFoundation) hoàn tất teardown session
+                await new Promise(r => setTimeout(r, waitMs));
+            }
+            console.log("[Camera] Đã giải phóng hoàn toàn stream cũ.");
+        }
+
+        async function acquireStreamWithFallback(targetMode, targetDeviceId = null) {
+            // Nếu có targetDeviceId cụ thể (khi chuyển đổi webcam trên Desktop có nhiều camera):
+            if (targetDeviceId) {
+                try {
+                    console.log(`[Camera] Thử getUserMedia theo deviceId: ${targetDeviceId}...`);
+                    return await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            deviceId: { exact: targetDeviceId },
+                            width:  { ideal: 1920 },
+                            height: { ideal: 1080 }
+                        },
+                        audio: false
+                    });
+                } catch (devErr1) {
+                    console.warn(`[Camera] Mở theo deviceId 1080p thất bại (${devErr1.name}). Thử native resolution...`);
+                    await new Promise(r => setTimeout(r, 150));
+                    return await navigator.mediaDevices.getUserMedia({
+                        video: {
+                            deviceId: { exact: targetDeviceId }
+                        },
+                        audio: false
+                    });
+                }
+            }
+
+            // Cấu hình 1: 1080p ideal với facingMode mong muốn
             try {
-                liveStream = await navigator.mediaDevices.getUserMedia({
+                console.log(`[Camera] Thử getUserMedia (Cấu hình 1: ideal 1080p, facingMode=${targetMode})...`);
+                return await navigator.mediaDevices.getUserMedia({
                     video: {
-                        facingMode: currentFacingMode,
+                        facingMode: { ideal: targetMode },
                         width:  { ideal: 1920 },
-                        height: { ideal: 1080 },
+                        height: { ideal: 1080 }
                     },
                     audio: false
                 });
-                const videoEl = document.getElementById('webcamLive');
+            } catch (err1) {
+                console.warn(`[Camera] Cấu hình 1 không khả dụng (${err1.name}: ${err1.message}). Thử cấu hình 2...`);
+                await new Promise(r => setTimeout(r, 150));
+            }
+
+            // Cấu hình 2: 720p ideal (tương thích cao hơn với camera trước di động hoặc webcam HD)
+            try {
+                console.log(`[Camera] Thử getUserMedia (Cấu hình 2: ideal 720p, facingMode=${targetMode})...`);
+                return await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: { ideal: targetMode },
+                        width:  { ideal: 1280 },
+                        height: { ideal: 720 }
+                    },
+                    audio: false
+                });
+            } catch (err2) {
+                console.warn(`[Camera] Cấu hình 2 không khả dụng (${err2.name}: ${err2.message}). Thử cấu hình 3...`);
+                await new Promise(r => setTimeout(r, 150));
+            }
+
+            // Cấu hình 3: Không ràng buộc độ phân giải, nhưng BẮT BUỘC giữ facingMode (KHÔNG fallback video: true)
+            console.log(`[Camera] Thử getUserMedia (Cấu hình 3: native resolution, facingMode=${targetMode})...`);
+            return await navigator.mediaDevices.getUserMedia({
+                video: {
+                    facingMode: { ideal: targetMode }
+                },
+                audio: false
+            });
+        }
+
+        async function startWebcam(targetFacingMode = currentFacingMode, isRollback = false, targetDeviceId = null) {
+            console.log(`[Camera] Khởi tạo camera (mục tiêu=${targetFacingMode}, rollback=${isRollback}, deviceId=${targetDeviceId})...`);
+            if (liveStream) {
+                await stopWebcam(350);
+            }
+
+            const videoEl = document.getElementById('webcamLive');
+            if (!videoEl) {
+                throw new Error("Không tìm thấy phần tử video hiển thị camera (webcamLive).");
+            }
+
+            let stream = null;
+
+            try {
+                stream = await acquireStreamWithFallback(targetFacingMode, targetDeviceId);
+                liveStream = stream;
+
                 videoEl.srcObject = liveStream;
+                videoEl.muted = true;
+                videoEl.setAttribute('playsinline', '');
+                videoEl.setAttribute('autoplay', '');
+
+                // Gọi video.play() rõ ràng, bắt và ném lỗi nếu không thể phát (chặn autoplay giả)
+                try {
+                    await videoEl.play();
+                } catch (playErr) {
+                    console.error(`[Camera] video.play() thất bại:`, playErr);
+                    throw new Error(`Trình duyệt không thể phát luồng video (${playErr.name || "PlayError"}: ${playErr.message || "Bị chặn autoplay"}).`);
+                }
+
+                // Chờ frame dữ liệu thực tế (videoWidth > 0 và readyState >= 2) có timeout rõ ràng
+                await new Promise((resolve, reject) => {
+                    const startTime = Date.now();
+                    const checkFrame = () => {
+                        if (videoEl.readyState >= 2 && videoEl.videoWidth > 0 && videoEl.videoHeight > 0) {
+                            resolve();
+                        } else if (Date.now() - startTime > 2500) {
+                            reject(new Error("Timeout: Camera đã mở nhưng không nhận được khung hình (frame rỗng)."));
+                        } else {
+                            requestAnimationFrame(checkFrame);
+                        }
+                    };
+                    checkFrame();
+                });
+
+                // Xác minh hướng camera thực tế từ phần cứng
                 const track = liveStream.getVideoTracks()[0];
-                const isFront = isFrontCameraTrack(track, currentFacingMode);
+                const settings = track.getSettings ? track.getSettings() : {};
+                currentDeviceId = settings.deviceId || targetDeviceId || null;
+
+                const isFront = isFrontCameraTrack(track, targetFacingMode);
+                const actualFacing = isFront ? "user" : "environment";
+                currentFacingMode = actualFacing;
                 videoEl.style.transform = isFront ? 'scaleX(-1)' : 'scaleX(1)';
-                
-                // Tự động hiển thị khung căn chỉnh khuôn mặt mờ khi camera hoạt động
+                console.log(`[Camera] Camera sẵn sàng: actualFacing=${actualFacing}, targetFacingMode=${targetFacingMode}, deviceId=${currentDeviceId}, label="${track ? track.label : 'N/A'}", isFront=${isFront}`);
+
+                // Kiểm tra ràng buộc hướng camera:
+                // CHỈ áp dụng trên Mobile (nơi có cảm biến trước/sau tách biệt rõ rệt)
+                // và khi không chỉ định deviceId cụ thể, không trong quá trình rollback
+                const isMobile = isMobileDevice();
+                if (isMobile && actualFacing !== targetFacingMode && !isRollback && !targetDeviceId) {
+                    throw new Error(`Không thể mở đúng camera ${targetFacingMode === "user" ? "trước" : "sau"}. Phần cứng trả về camera ${actualFacing === "user" ? "trước" : "sau"}.`);
+                }
+
                 const guide = document.getElementById('realtimeFaceGuide');
                 if (guide) guide.classList.remove('d-none');
+                return true;
             } catch (err) {
-                alert("Không thể bật camera.");
+                console.error(`[Camera] Lỗi khởi tạo camera (${err.name}: ${err.message}):`, err);
+                if (stream) {
+                    try { stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+                }
+                if (liveStream === stream) liveStream = null;
+                if (videoEl) videoEl.srcObject = null;
+
+                if (!isRollback) {
+                    throw err; // Ném lỗi để switchCamera xử lý rollback
+                }
+                alert(formatTeacherCameraError(err));
+                return false;
             }
         }
 
-        function stopWebcam() {
+        async function switchCamera() {
+            if (isSwitchingCamera) {
+                console.log("[Camera] Đang thực hiện chuyển đổi camera, bỏ qua lần nhấn này.");
+                return;
+            }
+
+            const isMobile = isMobileDevice();
+            const videoDevices = await getAvailableVideoInputs();
+
+            // Nếu trên Desktop và chỉ có 1 webcam: thông báo phù hợp, không tắt webcam hiện tại
+            if (!isMobile && videoDevices.length === 1) {
+                alert("Thiết bị hiện tại chỉ có một webcam, không hỗ trợ chuyển sang camera khác.");
+                return;
+            }
+
+            const switchBtn = document.querySelector('.btn-cam-switch');
+            isSwitchingCamera = true;
+            if (switchBtn) {
+                switchBtn.disabled = true;
+                switchBtn.classList.add('disabled');
+            }
+
+            // Kịch bản A: Trên Desktop có nhiều webcam (videoDevices.length > 1) -> Chuyển theo deviceId
+            if (!isMobile && videoDevices.length > 1) {
+                const currentIndex = videoDevices.findIndex(d => d.deviceId === currentDeviceId);
+                const nextDevice = videoDevices[(currentIndex + 1) % videoDevices.length];
+                const nextDeviceId = nextDevice ? nextDevice.deviceId : null;
+                const previousDeviceId = currentDeviceId;
+                console.log(`[Camera] Desktop chuyển webcam: ${currentDeviceId} -> ${nextDeviceId} (${nextDevice ? nextDevice.label : ''})`);
+
+                try {
+                    await stopWebcam(350);
+                    await startWebcam(currentFacingMode, false, nextDeviceId);
+                    console.log("[Camera] Chuyển đổi webcam Desktop thành công.");
+                } catch (switchErr) {
+                    console.error("[Camera] Chuyển webcam Desktop thất bại. Bắt đầu Rollback...", switchErr);
+                    try {
+                        await stopWebcam(350);
+                        const rollbackOk = await startWebcam(currentFacingMode, true, previousDeviceId);
+                        if (rollbackOk) {
+                            alert(`Không thể chuyển sang webcam tiếp theo (${switchErr.name || "Lỗi phần cứng"}). Đã khôi phục lại webcam ban đầu.`);
+                        } else {
+                            throw new Error("Rollback failed");
+                        }
+                    } catch (rollbackErr) {
+                        console.error("[Camera] Rollback thất bại hoàn toàn:", rollbackErr);
+                        await stopWebcam(0);
+                        alert(formatTeacherCameraError(switchErr));
+                    }
+                } finally {
+                    isSwitchingCamera = false;
+                    if (switchBtn) {
+                        switchBtn.disabled = false;
+                        switchBtn.classList.remove('disabled');
+                    }
+                }
+                return;
+            }
+
+            // Kịch bản B: Trên Mobile (Android / iOS) -> Giữ nguyên chuyển đổi user <-> environment
+            const previousMode = currentFacingMode;
+            const targetMode = (previousMode === "user") ? "environment" : "user";
+            console.log(`[Camera] Mobile chuyển camera: ${previousMode} -> ${targetMode} (isRealtimeRunning=${isRealtimeRunning})`);
+
+            try {
+                // 1. Dừng an toàn camera hiện tại và chờ giải phóng phần cứng
+                await stopWebcam(350);
+
+                // 2. Thử khởi tạo camera mới
+                await startWebcam(targetMode, false);
+                console.log(`[Camera] Chuyển đổi thành công sang camera ${targetMode}.`);
+            } catch (switchErr) {
+                console.error(`[Camera] Chuyển sang camera ${targetMode} thất bại (${switchErr.name}: ${switchErr.message}). Bắt đầu Rollback về ${previousMode}...`);
+                try {
+                    await stopWebcam(350);
+                    const rollbackOk = await startWebcam(previousMode, true);
+                    if (rollbackOk) {
+                        console.log(`[Camera] Rollback về ${previousMode} thành công.`);
+                        alert(`Không thể chuyển sang camera ${targetMode === "user" ? "trước" : "sau"} (${switchErr.name || "Lỗi phần cứng"}). Đã khôi phục lại camera ban đầu.`);
+                    } else {
+                        throw new Error("Rollback failed");
+                    }
+                } catch (rollbackErr) {
+                    console.error("[Camera] Rollback thất bại hoàn toàn:", rollbackErr);
+                    currentFacingMode = previousMode;
+                    await stopWebcam(0);
+                    alert(formatTeacherCameraError(switchErr));
+                }
+            } finally {
+                isSwitchingCamera = false;
+                if (switchBtn) {
+                    switchBtn.disabled = false;
+                    switchBtn.classList.remove('disabled');
+                }
+            }
+        }
+
+        document.getElementById('pills-realtime-tab').addEventListener('shown.bs.tab', async () => {
+            if (isSwitchingCamera) return;
+            try {
+                await startWebcam(currentFacingMode);
+            } catch (err) {
+                console.error("[Camera] Lỗi khởi tạo camera lần đầu:", err);
+                // Fallback tự động nếu khởi tạo ban đầu không khớp:
+                try {
+                    const fallbackMode = (currentFacingMode === "environment") ? "user" : "environment";
+                    await startWebcam(fallbackMode, false);
+                } catch (retryErr) {
+                    alert(formatTeacherCameraError(retryErr));
+                }
+            }
+        });
+        document.getElementById('pills-upload-tab').addEventListener('shown.bs.tab', async () => {
+            if (isSwitchingCamera) return;
+            await stopRealtime();
+            await stopWebcam(150);
+        });
+
+        // Dọn dẹp tài nguyên camera khi trang bị unload hoặc đăng xuất
+        window.addEventListener('pagehide', () => {
             if (liveStream) {
-                liveStream.getTracks().forEach(t => t.stop());
+                liveStream.getTracks().forEach(t => { try { t.stop(); } catch(e){} });
                 liveStream = null;
             }
-            // Ẩn khung căn chỉnh khuôn mặt khi tắt camera
-            const guide = document.getElementById('realtimeFaceGuide');
-            if (guide) guide.classList.add('d-none');
+        });
+        const teacherLogoutForm = document.querySelector('form[action="/logout"]');
+        if (teacherLogoutForm) {
+            teacherLogoutForm.addEventListener('submit', () => {
+                if (liveStream) {
+                    liveStream.getTracks().forEach(t => { try { t.stop(); } catch(e){} });
+                    liveStream = null;
+                }
+            });
         }
-
-        function switchCamera() {
-            currentFacingMode = (currentFacingMode === "user") ? "environment" : "user";
-            startWebcam();
-        }
-
-        document.getElementById('pills-realtime-tab').addEventListener('shown.bs.tab', () => startWebcam());
-        document.getElementById('pills-upload-tab').addEventListener('shown.bs.tab', () => { stopRealtime(); stopWebcam(); });
 
         function toggleRealtimeScan() {
             if (isRealtimeRunning) stopRealtime();
@@ -1915,7 +2224,7 @@
         // Chụp 1 khung -> detect -> crop. Trả {seq, ts, w, h, faces:[{box, score, blob}]} hoặc null
         async function captureAndDetect() {
             const videoEl = document.getElementById('webcamLive');
-            if (!videoEl.videoWidth || !videoEl.videoHeight || !faceDetector) return null;
+            if (!videoEl || !videoEl.videoWidth || !videoEl.videoHeight || !faceDetector || videoEl.readyState < 2 || isSwitchingCamera) return null;
 
             // Không giả định webcam cấp đúng 1920x1080: lấy kích thước THỰC của video, chỉ chặn cạnh dài ở RT_CAPTURE_MAX_SIDE
             const ratio = Math.min(1, RT_CAPTURE_MAX_SIDE / Math.max(videoEl.videoWidth, videoEl.videoHeight));
@@ -2070,7 +2379,7 @@
             frameSeq = 0;
             realtimeTimer = setInterval(async () => {
                 // isCapturing: nếu detect+crop của khung trước chưa xong thì bỏ nhịp này (không chồng nhiều khung)
-                if (!isRealtimeRunning || isCapturing) return;
+                if (!isRealtimeRunning || isCapturing || isSwitchingCamera) return;
                 isCapturing = true;
                 try {
                     const fr = await captureAndDetect();
