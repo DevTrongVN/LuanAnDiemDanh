@@ -116,7 +116,7 @@ realtime_transform = transforms.Compose([
 PIPELINE_CONFIG = {
     "image": {
         "det_thresh": 0.7,
-        "rec_thresh": 0.80,
+        "rec_thresh": 0.74,
         "nms_iou": 0.20,
         "grid": (3, 3),
         "padding_ratio": 0.15,
