@@ -432,12 +432,16 @@ async def finalize_attendance(
         final_media_path = f"uploads/media_{timestamp}_{uid}{media_ext}"   # tên do server đặt, giữ đuôi whitelist
         shutil.move(temp_media, final_media_path)
 
-        final_excel_path = None
-        if excel_filename and excel_filename.strip():
-            temp_excel, excel_ext = chunk_path(session_id, "excel", excel_filename)
-            if temp_excel and os.path.exists(temp_excel):
-                final_excel_path = f"uploads/danh_sach_{timestamp}_{uid}{excel_ext}"
-                shutil.move(temp_excel, final_excel_path)
+        # KIỂM TRA BẮT BUỘC BACKEND: Phải có file Excel danh sách lớp
+        if not excel_filename or not excel_filename.strip():
+            raise HTTPException(status_code=400, detail="Bắt buộc phải tải lên file Excel danh sách lớp trước khi thực hiện điểm danh.")
+
+        temp_excel, excel_ext = chunk_path(session_id, "excel", excel_filename)
+        if not temp_excel or not os.path.exists(temp_excel):
+            raise HTTPException(status_code=400, detail="Không tìm thấy file Excel danh sách lớp đã tải lên.")
+
+        final_excel_path = f"uploads/danh_sach_{timestamp}_{uid}{excel_ext}"
+        shutil.move(temp_excel, final_excel_path)
 
         loop = asyncio.get_running_loop()
         res = await loop.run_in_executor(ai_pool, process_attendance, final_media_path, final_excel_path)
@@ -511,7 +515,23 @@ async def upload_realtime_class_list(excel_file: UploadFile = File(...), user: d
         mssv_list = df_list[mssv_col].dropna().astype(str).str.replace(r'\.0$', '', regex=True).str.strip().tolist()
         mssv_list = [m for m in mssv_list if m.isalnum()]
 
-        return {"success": True, "mssv_list": mssv_list, "total": len(mssv_list)}
+        # KIỂM TRA LỚP 4: Danh sách có bị rỗng sau khi làm sạch không?
+        if not mssv_list:
+            return {"success": False, "error": "File Excel không chứa bất kỳ MSSV hợp lệ nào sau khi làm sạch."}
+
+        # KIỂM TRA LỚP 5: Đối chiếu với Face Bank trong RAM
+        import pipeline_MediapipeInceptionV3 as pipe
+        if not pipe.GLOBAL_STUDENT_MAP:
+            pipe.load_face_bank_to_ram()
+
+        registered_count = sum(1 for m in mssv_list if m in pipe.GLOBAL_STUDENT_MAP)
+        if registered_count == 0:
+            return {
+                "success": False, 
+                "error": "Không có sinh viên nào trong danh sách Excel này đã đăng ký khuôn mặt trong CSDL Face Bank."
+            }
+
+        return {"success": True, "mssv_list": mssv_list, "total": len(mssv_list), "registered": registered_count}
     except Exception as e:
         logger.error(f"LỖI NẠP DANH SÁCH LỚP: {e}")
         return {"success": False, "error": "Không đọc được file Excel. Hãy kiểm tra định dạng."}
@@ -550,25 +570,14 @@ async def export_realtime_excel(req: ExportRealtimeRequest, user: dict = Depends
                 file_path = os.path.join("database", f)
                 break
 
-    if not use_class_list or not file_path:
-        # KỊCH BẢN A: Không dùng danh sách lớp -> Lấy toàn bộ FaceBank
-        if not pipe.GLOBAL_STUDENT_MAP:
-            pipe.load_face_bank_to_ram()
+    # BẮT BUỘC PHẢI CÓ DANH SÁCH LỚP EXCEL MỚI XUẤT FILE ĐƯỢC (FAIL-CLOSED)
+    if not use_class_list or not file_path or not os.path.exists(file_path):
+        return {
+            "success": False, 
+            "error": "Lỗi: Bắt buộc phải có file Excel danh sách lớp để xuất kết quả điểm danh. Vui lòng nạp lại danh sách lớp."
+        }
 
-        all_mssvs = list(pipe.GLOBAL_STUDENT_MAP.keys())
-        data_rows = []
-        for m in all_mssvs:
-            status_txt = "✅ Có mặt" if m in present_dict else "❌ Vắng mặt"
-            time_detected = present_dict[m] if m in present_dict else ""
-            name = pipe.GLOBAL_STUDENT_MAP[m]["HoTen"]
-            data_rows.append({"MSSV": m, "Họ và Tên": name, "Trạng thái AI": status_txt, "Thời gian": time_detected})
-
-        df_list = pd.DataFrame(data_rows)
-        out_name = f"KetQua_Realtime_ALL_{int(time.time())}_{uuid.uuid4().hex[:6]}.xlsx"
-        df_list.to_excel(f"uploads/{out_name}", index=False)
-        return {"success": True, "excel_url": f"/api/download_excel?filename={out_name}"}
-
-    # KỊCH BẢN B: Có danh sách lớp tải lên
+    # XUẤT KẾT QUẢ THEO DANH SÁCH LỚP ĐÃ NẠP
     try:
         try:
             df_raw = pd.read_excel(file_path, header=None)
@@ -754,6 +763,13 @@ async def do_realtime_stream(
 
         target_mssvs = [m.strip() for m in mssv_list_str.split(",") if m.strip()][:500]
         target_mssvs = [m for m in target_mssvs if sec.MSSV_RE.fullmatch(m)]
+
+        # KIỂM TRA BẮT BUỘC BACKEND REALTIME: Danh sách MSSV không được rỗng
+        if not target_mssvs:
+            return JSONResponse({
+                "success": False, 
+                "error": "Bắt buộc phải nạp danh sách lớp Excel trước khi thực hiện nhận diện camera."
+            }, status_code=400)
 
         loop = asyncio.get_running_loop()
         detected_faces, snapshot_tracks = await loop.run_in_executor(

@@ -115,7 +115,7 @@ realtime_transform = transforms.Compose([
 # ==========================================
 PIPELINE_CONFIG = {
     "image": {
-        "det_thresh": 0.5,
+        "det_thresh": 0.7,
         "rec_thresh": 0.70,
         "nms_iou": 0.20,
         "grid": (3, 3),
@@ -133,8 +133,8 @@ PIPELINE_CONFIG = {
         "min_vote_ratio": 0.6       
     },
     "realtime": {
-        "det_thresh": 0.6,
-        "rec_thresh": 0.7,
+        "det_thresh": 0.7,
+        "rec_thresh": 0.84,
         "scale": 0.6,               # chỉ dùng cho lượt quét toàn khung
         "detect_max_side": 640,     # cạnh dài của ảnh thu nhỏ dành riêng cho MediaPipe; crop mặt luôn lấy từ frame gốc
         "grid": (1, 1),
@@ -142,7 +142,7 @@ PIPELINE_CONFIG = {
         "nms_iou": 0,           #0.30
         "full_frame_pass": True,    # bắt mặt lớn vắt ngang ranh giới
         "edge_margin_px": 4,
-        "voting_window_frames": 10,
+        "voting_window_frames": 12,
         "min_vote_ratio": 0.6,
         "max_disappeared": 4        # Tăng lên 4 theo lưu ý để chống rớt track
     }
@@ -561,32 +561,35 @@ def process_attendance(media_path, excel_path=None):
 
     timestamp_base = int(time.time())
 
-    if excel_path and os.path.exists(excel_path):
-        try:
-            df_raw = pd.read_excel(excel_path, header=None)
-        except Exception:
-            df_raw = pd.read_excel(excel_path, header=None, engine='xlrd')
+    # KIỂM TRA BẮT BUỘC FILE EXCEL DANH SÁCH LỚP (FAIL-CLOSED)
+    if not excel_path or not os.path.exists(excel_path):
+        raise ValueError("Lỗi điểm danh: Bắt buộc phải có file Excel danh sách sinh viên của lớp.")
 
-        header_row_idx = None
-        for idx, row in df_raw.iterrows():
-            if row.astype(str).str.contains('MSSV', case=False, na=False).any():
-                header_row_idx = idx
-                break
+    try:
+        df_raw = pd.read_excel(excel_path, header=None)
+    except Exception:
+        df_raw = pd.read_excel(excel_path, header=None, engine='xlrd')
 
-        if header_row_idx is None:
-            raise ValueError("Không tìm thấy cột 'MSSV' trong file danh sách.")
+    header_row_idx = None
+    for idx, row in df_raw.iterrows():
+        if row.astype(str).str.contains('MSSV|Mã', case=False, na=False).any():
+            header_row_idx = idx
+            break
 
-        df_list = pd.read_excel(excel_path, header=header_row_idx)
-        mssv_col = [c for c in df_list.columns if 'MSSV' in str(c).upper()][0]
-        class_mssv_list = df_list[mssv_col].dropna().astype(str).str.replace(r'\.0$', '', regex=True).str.strip().tolist()
-        class_mssv_list = [m for m in class_mssv_list if m.isalnum()]
-    else:
-        class_mssv_list = list(GLOBAL_STUDENT_MAP.keys())
-        mssv_col = "MSSV"
-        df_list = pd.DataFrame({
-            "MSSV": class_mssv_list,
-            "Họ và Tên": [GLOBAL_STUDENT_MAP[m]["HoTen"] for m in class_mssv_list]
-        })
+    if header_row_idx is None:
+        raise ValueError("File Excel không hợp lệ: Không tìm thấy cột 'MSSV' hoặc 'Mã'.")
+
+    df_list = pd.read_excel(excel_path, header=header_row_idx)
+    mssv_col_matches = [c for c in df_list.columns if 'MSSV' in str(c).upper() or 'MÃ' in str(c).upper()]
+    if not mssv_col_matches:
+        raise ValueError("File Excel không hợp lệ: Không tìm thấy tiêu đề cột MSSV.")
+    mssv_col = mssv_col_matches[0]
+
+    class_mssv_list = df_list[mssv_col].dropna().astype(str).str.replace(r'\.0$', '', regex=True).str.strip().tolist()
+    class_mssv_list = [m for m in class_mssv_list if m.isalnum()]
+
+    if not class_mssv_list:
+        raise ValueError("File Excel không chứa bất kỳ MSSV hợp lệ nào sau khi làm sạch.")
 
     db_embeddings_list = []
     db_info_list = []
@@ -602,7 +605,11 @@ def process_attendance(media_path, excel_path=None):
 
     unregistered_mssvs = [m for m in class_mssv_list if m not in registered_mssvs]
     has_registered = len(db_embeddings_list) > 0
-    db_matrix = np.vstack(db_embeddings_list) if has_registered else np.empty((0, 512), dtype=np.float32)
+
+    if not has_registered:
+        raise ValueError("Không có sinh viên nào trong danh sách lớp đã đăng ký khuôn mặt trong CSDL Face Bank.")
+
+    db_matrix = np.vstack(db_embeddings_list)
 
     attendance_records = {}
     detected_crops = []
@@ -881,6 +888,7 @@ def _get_realtime_db_matrix(class_mssv_list):
     db_embeddings_list = []
     db_info_list = []
 
+    # FAIL-CLOSED: CHỈ NẠP MSSV CÓ TRONG DANH SÁCH LỚP. TUYỆT ĐỐI KHÔNG FALLBACK 200 SV!
     if key:
         for mssv in key:
             student_data = GLOBAL_STUDENT_MAP.get(mssv)
@@ -889,10 +897,8 @@ def _get_realtime_db_matrix(class_mssv_list):
                     db_embeddings_list.append(vec)
                     db_info_list.append(f"{mssv} - {student_data['HoTen']}")
     else:
-        for mssv, student_data in GLOBAL_STUDENT_MAP.items():
-            for vec in student_data["vectors"]:
-                db_embeddings_list.append(vec)
-                db_info_list.append(f"{mssv} - {student_data['HoTen']}")
+        # Nếu không có danh sách lớp -> Giữ nguyên danh sách rỗng
+        print("⚠️ [Security Fail-Closed] class_mssv_list rỗng. Ma trận nhận diện được đặt về 0 dòng.")
 
     has_reg = len(db_embeddings_list) > 0
     db_mat = np.vstack(db_embeddings_list) if has_reg else np.empty((0, 512), dtype=np.float32)
