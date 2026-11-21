@@ -124,7 +124,7 @@ PIPELINE_CONFIG = {
     },
     "video": {
         "det_thresh": 0.70,         # Tăng lên 0.7 để lọc mặt ma
-        "rec_thresh": 0.70,
+        "rec_thresh": 0.82,
         "nms_iou": 0.30,            # Tăng lên 0.3 để gộp box mượt hơn
         "grid": (3, 3),             # Cấu trúc lưới 3x3 chuẩn
         "padding_ratio": 0.30,      # Đệm 30% để chống đứt đôi khuôn mặt
